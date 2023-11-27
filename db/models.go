@@ -14,3 +14,23 @@ type Album struct {
 	Artist pgtype.Text    `json:"artist"`
 	Price  pgtype.Numeric `json:"price"`
 }
+
+type Artist struct {
+	ID       int32       `json:"id"`
+	Name     string      `json:"name"`
+	Birthday pgtype.Date `json:"birthday"`
+}
+
+type Purchase struct {
+	ID    int32       `json:"id"`
+	User  pgtype.Int4 `json:"user"`
+	Album pgtype.Int4 `json:"album"`
+	Date  pgtype.Date `json:"date"`
+}
+
+type User struct {
+	ID       int32          `json:"id"`
+	Username pgtype.Text    `json:"username"`
+	Email    pgtype.Text    `json:"email"`
+	Balance  pgtype.Numeric `json:"balance"`
+}

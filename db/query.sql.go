@@ -37,6 +37,51 @@ func (q *Queries) CreateAlbum(ctx context.Context, arg CreateAlbumParams) (Album
 	return i, err
 }
 
+const createArtist = `-- name: CreateArtist :one
+INSERT INTO artists (
+  name, birthday
+) VALUES (
+  $1, $2
+) RETURNING id, name, birthday
+`
+
+type CreateArtistParams struct {
+	Name     string      `json:"name"`
+	Birthday pgtype.Date `json:"birthday"`
+}
+
+func (q *Queries) CreateArtist(ctx context.Context, arg CreateArtistParams) (Artist, error) {
+	row := q.db.QueryRow(ctx, createArtist, arg.Name, arg.Birthday)
+	var i Artist
+	err := row.Scan(&i.ID, &i.Name, &i.Birthday)
+	return i, err
+}
+
+const createUser = `-- name: CreateUser :one
+INSERT INTO users (
+  username, email
+) VALUES (
+  $1, $2
+) RETURNING id, username, email, balance
+`
+
+type CreateUserParams struct {
+	Username pgtype.Text `json:"username"`
+	Email    pgtype.Text `json:"email"`
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, createUser, arg.Username, arg.Email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.Balance,
+	)
+	return i, err
+}
+
 const deleteAlbum = `-- name: DeleteAlbum :exec
 DELETE FROM albums
 WHERE id = $1
@@ -47,11 +92,35 @@ func (q *Queries) DeleteAlbum(ctx context.Context, id int32) error {
 	return err
 }
 
+const deleteArtist = `-- name: DeleteArtist :exec
+DELETE from artists
+WHERE id = $1
+`
+
+func (q *Queries) DeleteArtist(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, deleteArtist, id)
+	return err
+}
+
+const deleteUser = `-- name: DeleteUser :exec
+DELETE FROM users
+WHERE id = $1
+`
+
+func (q *Queries) DeleteUser(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, deleteUser, id)
+	return err
+}
+
 const getAlbum = `-- name: GetAlbum :one
+
 SELECT id, title, artist, price FROM albums
 WHERE id = $1 LIMIT 1
 `
 
+// These queries could and should be split over multiple files
+// corresponding to each individual table in the db
+// Albums
 func (q *Queries) GetAlbum(ctx context.Context, id int32) (Album, error) {
 	row := q.db.QueryRow(ctx, getAlbum, id)
 	var i Album
@@ -62,6 +131,92 @@ func (q *Queries) GetAlbum(ctx context.Context, id int32) (Album, error) {
 		&i.Price,
 	)
 	return i, err
+}
+
+const getArtist = `-- name: GetArtist :one
+SELECT id, name, birthday FROM artists
+WHERE id = $1 LIMIT 1
+`
+
+// Artists
+func (q *Queries) GetArtist(ctx context.Context, id int32) (Artist, error) {
+	row := q.db.QueryRow(ctx, getArtist, id)
+	var i Artist
+	err := row.Scan(&i.ID, &i.Name, &i.Birthday)
+	return i, err
+}
+
+const getArtists = `-- name: GetArtists :many
+SELECT id, name, birthday FROM artists
+ORDER BY name
+`
+
+func (q *Queries) GetArtists(ctx context.Context) ([]Artist, error) {
+	rows, err := q.db.Query(ctx, getArtists)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Artist
+	for rows.Next() {
+		var i Artist
+		if err := rows.Scan(&i.ID, &i.Name, &i.Birthday); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUser = `-- name: GetUser :one
+SELECT id, username, email, balance FROM users
+WHERE id = $1 LIMIT 1
+`
+
+// Users
+func (q *Queries) GetUser(ctx context.Context, id int32) (User, error) {
+	row := q.db.QueryRow(ctx, getUser, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.Balance,
+	)
+	return i, err
+}
+
+const getUsers = `-- name: GetUsers :many
+SELECT id, username, email, balance FROM users
+ORDER BY username
+`
+
+func (q *Queries) GetUsers(ctx context.Context) ([]User, error) {
+	rows, err := q.db.Query(ctx, getUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.Email,
+			&i.Balance,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listAlbums = `-- name: ListAlbums :many
@@ -94,10 +249,11 @@ func (q *Queries) ListAlbums(ctx context.Context) ([]Album, error) {
 	return items, nil
 }
 
-const updateAlbum = `-- name: UpdateAlbum :exec
+const updateAlbum = `-- name: UpdateAlbum :one
 UPDATE albums
 SET title = $2, artist = $3, price = $4
 WHERE id = $1
+RETURNING id, title, artist, price
 `
 
 type UpdateAlbumParams struct {
@@ -107,12 +263,64 @@ type UpdateAlbumParams struct {
 	Price  pgtype.Numeric `json:"price"`
 }
 
-func (q *Queries) UpdateAlbum(ctx context.Context, arg UpdateAlbumParams) error {
-	_, err := q.db.Exec(ctx, updateAlbum,
+func (q *Queries) UpdateAlbum(ctx context.Context, arg UpdateAlbumParams) (Album, error) {
+	row := q.db.QueryRow(ctx, updateAlbum,
 		arg.ID,
 		arg.Title,
 		arg.Artist,
 		arg.Price,
 	)
-	return err
+	var i Album
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Artist,
+		&i.Price,
+	)
+	return i, err
+}
+
+const updateArtist = `-- name: UpdateArtist :one
+UPDATE artists
+set name = $2, birthday = $3
+WHERE id =$1
+RETURNING id, name, birthday
+`
+
+type UpdateArtistParams struct {
+	ID       int32       `json:"id"`
+	Name     string      `json:"name"`
+	Birthday pgtype.Date `json:"birthday"`
+}
+
+func (q *Queries) UpdateArtist(ctx context.Context, arg UpdateArtistParams) (Artist, error) {
+	row := q.db.QueryRow(ctx, updateArtist, arg.ID, arg.Name, arg.Birthday)
+	var i Artist
+	err := row.Scan(&i.ID, &i.Name, &i.Birthday)
+	return i, err
+}
+
+const updateUser = `-- name: UpdateUser :one
+UPDATE users
+set username = $2, email = $3
+WHERE id = $1
+RETURNING id, username, email, balance
+`
+
+type UpdateUserParams struct {
+	ID       int32       `json:"id"`
+	Username pgtype.Text `json:"username"`
+	Email    pgtype.Text `json:"email"`
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, updateUser, arg.ID, arg.Username, arg.Email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.Balance,
+	)
+	return i, err
 }
