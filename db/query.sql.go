@@ -20,9 +20,9 @@ INSERT INTO albums (
 `
 
 type CreateAlbumParams struct {
-	Title  pgtype.Text    `json:"title"`
-	Artist pgtype.Text    `json:"artist"`
-	Price  pgtype.Numeric `json:"price"`
+	Title  string `json:"title"`
+	Artist string `json:"artist"`
+	Price  int32  `json:"price"`
 }
 
 func (q *Queries) CreateAlbum(ctx context.Context, arg CreateAlbumParams) (Album, error) {
@@ -57,21 +57,49 @@ func (q *Queries) CreateArtist(ctx context.Context, arg CreateArtistParams) (Art
 	return i, err
 }
 
+const createPurchase = `-- name: CreatePurchase :one
+INSERT INTO purchases (
+  "user", album, "date"
+) VALUES (
+  $1, $2, $3
+) RETURNING id, "user", album, date
+`
+
+type CreatePurchaseParams struct {
+	User  int32       `json:"user"`
+	Album int32       `json:"album"`
+	Date  pgtype.Date `json:"date"`
+}
+
+// Purchases
+func (q *Queries) CreatePurchase(ctx context.Context, arg CreatePurchaseParams) (Purchase, error) {
+	row := q.db.QueryRow(ctx, createPurchase, arg.User, arg.Album, arg.Date)
+	var i Purchase
+	err := row.Scan(
+		&i.ID,
+		&i.User,
+		&i.Album,
+		&i.Date,
+	)
+	return i, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
-  username, email
+  username, email, balance
 ) VALUES (
-  $1, $2
+  $1, $2, $3
 ) RETURNING id, username, email, balance
 `
 
 type CreateUserParams struct {
-	Username pgtype.Text `json:"username"`
-	Email    pgtype.Text `json:"email"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Balance  int32  `json:"balance"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRow(ctx, createUser, arg.Username, arg.Email)
+	row := q.db.QueryRow(ctx, createUser, arg.Username, arg.Email, arg.Balance)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -171,6 +199,36 @@ func (q *Queries) GetArtists(ctx context.Context) ([]Artist, error) {
 	return items, nil
 }
 
+const getPurchases = `-- name: GetPurchases :many
+SELECT id, "user", album, date FROM purchases
+ORDER BY id
+`
+
+func (q *Queries) GetPurchases(ctx context.Context) ([]Purchase, error) {
+	rows, err := q.db.Query(ctx, getPurchases)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Purchase
+	for rows.Next() {
+		var i Purchase
+		if err := rows.Scan(
+			&i.ID,
+			&i.User,
+			&i.Album,
+			&i.Date,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUser = `-- name: GetUser :one
 SELECT id, username, email, balance FROM users
 WHERE id = $1 LIMIT 1
@@ -257,10 +315,10 @@ RETURNING id, title, artist, price
 `
 
 type UpdateAlbumParams struct {
-	ID     int32          `json:"id"`
-	Title  pgtype.Text    `json:"title"`
-	Artist pgtype.Text    `json:"artist"`
-	Price  pgtype.Numeric `json:"price"`
+	ID     int32  `json:"id"`
+	Title  string `json:"title"`
+	Artist string `json:"artist"`
+	Price  int32  `json:"price"`
 }
 
 func (q *Queries) UpdateAlbum(ctx context.Context, arg UpdateAlbumParams) (Album, error) {
@@ -302,19 +360,25 @@ func (q *Queries) UpdateArtist(ctx context.Context, arg UpdateArtistParams) (Art
 
 const updateUser = `-- name: UpdateUser :one
 UPDATE users
-set username = $2, email = $3
+set username = $2, email = $3, balance = $4
 WHERE id = $1
 RETURNING id, username, email, balance
 `
 
 type UpdateUserParams struct {
-	ID       int32       `json:"id"`
-	Username pgtype.Text `json:"username"`
-	Email    pgtype.Text `json:"email"`
+	ID       int32  `json:"id"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Balance  int32  `json:"balance"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
-	row := q.db.QueryRow(ctx, updateUser, arg.ID, arg.Username, arg.Email)
+	row := q.db.QueryRow(ctx, updateUser,
+		arg.ID,
+		arg.Username,
+		arg.Email,
+		arg.Balance,
+	)
 	var i User
 	err := row.Scan(
 		&i.ID,
