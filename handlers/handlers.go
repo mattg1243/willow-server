@@ -6,9 +6,10 @@ import (
 )
 
 type Handler struct {
+	Conn *pgx.Conn
 	Queries *db.Queries
 }
 
 func NewHandler(conn *pgx.Conn) *Handler {
-	return &Handler{db.New(conn)}
+	return &Handler{conn, db.New(conn)}
 }
