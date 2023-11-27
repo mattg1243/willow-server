@@ -38,14 +38,14 @@ ORDER BY username;
 
 -- name: CreateUser :one
 INSERT INTO users (
-  username, email
+  username, email, balance
 ) VALUES (
-  $1, $2
+  $1, $2, $3
 ) RETURNING *;
 
 -- name: UpdateUser :one
 UPDATE users
-set username = $2, email = $3
+set username = $2, email = $3, balance = $4
 WHERE id = $1
 RETURNING *;
 
@@ -78,3 +78,15 @@ RETURNING *;
 -- name: DeleteArtist :exec
 DELETE from artists
 WHERE id = $1;
+
+-- Purchases
+-- name: CreatePurchase :one
+INSERT INTO purchases (
+  "user", album, "date"
+) VALUES (
+  $1, $2, $3
+) RETURNING *;
+
+-- name: GetPurchases :many
+SELECT * FROM purchases
+ORDER BY id;
