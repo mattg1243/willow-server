@@ -34,4 +34,10 @@ func LoadRoutes(a *fiber.App, h *handlers.Handler) {
 	artistRoutes.Get("/:id", h.GetArtistHandler)
 	artistRoutes.Put("/:id", h.UpdateArtistHandler)
 	artistRoutes.Delete("/:id", h.DeleteArtistHandler)
+
+	// purchase routes
+	purchaseRoutes := a.Group("/purchases")
+
+	purchaseRoutes.Post("/", h.CreatePurchaseHandler)
+	purchaseRoutes.Get("/", h.GetPurchasesHandler)
 }

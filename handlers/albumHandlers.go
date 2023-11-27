@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
@@ -28,12 +27,8 @@ func (h *Handler) GetAlbumsHandler(c *fiber.Ctx) error {
 		log.Fatalf("An error occured:\n%s", err.Error())
 		return c.SendStatus(500)
 	}
-	jsonRes, err := json.Marshal(albums)
-	if err != nil {
-		log.Fatalf("An error occured:\n%s", err)
-		return c.SendStatus(500)
-	}
-	return c.SendString(string(jsonRes))
+
+	return c.JSON(albums)
 }
 
 func (h *Handler) CreateAlbumHandler(c *fiber.Ctx) error {

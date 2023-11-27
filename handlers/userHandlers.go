@@ -36,7 +36,7 @@ func (h *Handler) CreateUserHandler(c* fiber.Ctx) error {
 		return c.Status(500).JSON(err.Error())
 	}
 
-	newUser, err := h.Queries.CreateUser(c.Context(), db.CreateUserParams{Username: user.Username, Email: user.Email})
+	newUser, err := h.Queries.CreateUser(c.Context(), db.CreateUserParams{Username: user.Username, Email: user.Email, Balance: user.Balance})
 	if err != nil {
 		log.Fatalf("An error occured:\n%s", err.Error())
 		return c.Status(500).JSON(err.Error())
