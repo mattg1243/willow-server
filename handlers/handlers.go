@@ -6,10 +6,12 @@ import (
 )
 
 type Handler struct {
-	Conn *pgx.Conn
-	Queries *db.Queries
+	conn *pgx.Conn
+	queries *db.Queries
+	validator *Validator
 }
 
 func NewHandler(conn *pgx.Conn) *Handler {
-	return &Handler{conn, db.New(conn)}
+	v := NewValidator()
+	return &Handler{conn, db.New(conn), v}
 }
