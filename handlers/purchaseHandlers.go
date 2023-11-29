@@ -7,6 +7,9 @@ import (
 	"github.com/mattg1243/sqlc-fiber/db"
 )
 
+// TODO follow the error handling pattern shown in the userHandler file
+// TODO update the handlers with the request / bind pattern when those are done
+
 func (h *Handler) CreatePurchaseHandler (c *fiber.Ctx) error {
 	var purchase db.Purchase
 
@@ -14,14 +17,14 @@ func (h *Handler) CreatePurchaseHandler (c *fiber.Ctx) error {
 		return c.Status(400).JSON(err.Error())
 	}
 
-	tx, err := h.Conn.Begin(c.Context())
+	tx, err := h.conn.Begin(c.Context())
 	if err != nil {
 		fmt.Println(err.Error())
 		return err
 	}
 	defer tx.Rollback(c.Context())
 
-	qtx := h.Queries.WithTx(tx)
+	qtx := h.queries.WithTx(tx)
 
 	user, err := qtx.GetUser(c.Context(), purchase.User)
 	if err != nil {
@@ -57,7 +60,7 @@ func (h *Handler) CreatePurchaseHandler (c *fiber.Ctx) error {
 }
 
 func (h *Handler) GetPurchasesHandler(c *fiber.Ctx) error {
-	purchases, err := h.Queries.GetPurchases(c.Context())
+	purchases, err := h.queries.GetPurchases(c.Context())
 	if err != nil {
 		fmt.Println(err.Error())
 		return c.Status(500).JSON(err.Error())

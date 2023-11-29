@@ -13,7 +13,7 @@ func (h *Handler) GetAlbumHandler(c *fiber.Ctx) error {
 		log.Fatalf("An error occured:\n%s", err.Error())
 		return c.SendStatus(500)
 	}
-	album, err := h.Queries.GetAlbum(c.Context(), int32(albumId))
+	album, err := h.queries.GetAlbum(c.Context(), int32(albumId))
 	if err != nil {
 		log.Fatalf("An error occured:\n%s", err.Error())
 		return c.SendStatus(500)
@@ -22,7 +22,7 @@ func (h *Handler) GetAlbumHandler(c *fiber.Ctx) error {
 }
 
 func (h *Handler) GetAlbumsHandler(c *fiber.Ctx) error {
-	albums, err := h.Queries.ListAlbums(c.Context())
+	albums, err := h.queries.ListAlbums(c.Context())
 	if err != nil {
 		log.Fatalf("An error occured:\n%s", err.Error())
 		return c.SendStatus(500)
@@ -38,7 +38,7 @@ func (h *Handler) CreateAlbumHandler(c *fiber.Ctx) error {
 		return c.Status(400).JSON(err.Error())
 	}
 	
-	newAlbum, err := h.Queries.CreateAlbum(c.Context(), db.CreateAlbumParams{Title: album.Title, Artist: album.Artist, Price: album.Price})
+	newAlbum, err := h.queries.CreateAlbum(c.Context(), db.CreateAlbumParams{Title: album.Title, Artist: album.Artist, Price: album.Price})
 	if err != nil {
 		log.Fatalf("An error occured:\n%s", err.Error())
 		return c.SendStatus(500)
@@ -53,7 +53,7 @@ func (h *Handler) UpdateAlbumHandlder(c *fiber.Ctx) error {
 		return c.Status(400).JSON(err.Error())
 	}
 
-	updatedAlbum, err := h.Queries.UpdateAlbum(c.Context(), db.UpdateAlbumParams{ID: album.ID, Title: album.Title, Artist: album.Artist, Price: album.Price})
+	updatedAlbum, err := h.queries.UpdateAlbum(c.Context(), db.UpdateAlbumParams{ID: album.ID, Title: album.Title, Artist: album.Artist, Price: album.Price})
 	if err != nil {
 		log.Fatalf("An error occured:\n%s", err.Error())
 		return c.SendStatus(500)
@@ -69,7 +69,7 @@ func (h *Handler) DeleteAlbumHandler(c *fiber.Ctx) error {
 		return c.SendStatus(500)
 	}
 
-	err = h.Queries.DeleteAlbum(c.Context(), int32(albumId))
+	err = h.queries.DeleteAlbum(c.Context(), int32(albumId))
 	if err != nil {
 		log.Fatalf("An error occured:\n%s", err.Error())
 		return c.SendStatus(500)
