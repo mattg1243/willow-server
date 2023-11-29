@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
@@ -37,6 +38,7 @@ func main() {
 	app := fiber.New(fiber.Config{
 		Immutable: true,
 	})
+	app.Use(logger.New())
 	// load routes
 	routes.LoadRoutes(app, handler)
 	// listen
