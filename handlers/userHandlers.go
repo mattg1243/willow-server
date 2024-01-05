@@ -10,16 +10,6 @@ import (
 	"github.com/mattg1243/sqlc-fiber/utils"
 )
 
-
-func (h *Handler) GetUsersHandler(c *fiber.Ctx) error {
-	users, err := h.queries.GetUsers(c.Context())
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(err.Error())
-	}
-
-	return c.JSON(users)
-}
-
 func (h *Handler) GetUserHandler(c *fiber.Ctx) error {
 	user, err := c.ParamsInt("id")
 	if err != nil {
