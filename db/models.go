@@ -10,6 +10,7 @@ import (
 
 type Client struct {
 	ID                     pgtype.UUID      `json:"id"`
+	UserID                 pgtype.UUID      `json:"user_id"`
 	Fname                  string           `json:"fname"`
 	Lname                  pgtype.Text      `json:"lname"`
 	Email                  pgtype.Text      `json:"email"`
@@ -23,6 +24,7 @@ type Client struct {
 
 type Event struct {
 	ID         pgtype.UUID      `json:"id"`
+	ClientID   pgtype.UUID      `json:"client_id"`
 	Date       pgtype.Timestamp `json:"date"`
 	Duration   pgtype.Numeric   `json:"duration"`
 	Type       pgtype.Text      `json:"type"`
