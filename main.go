@@ -25,6 +25,7 @@ func main() {
 
 	dbUser := os.Getenv("DB_USER")
 	dbName := os.Getenv("DB_NAME")
+	
 
 	conn, err := pgx.Connect(ctx, fmt.Sprintf("user=%s dbname=%s", dbUser, dbName))
 	if err != nil {

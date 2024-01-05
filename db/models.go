@@ -8,29 +8,46 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type Album struct {
-	ID     int32  `json:"id"`
-	Title  string `json:"title"`
-	Artist string `json:"artist"`
-	Price  int32  `json:"price"`
+type Client struct {
+	ID                     pgtype.UUID      `json:"id"`
+	Fname                  string           `json:"fname"`
+	Lname                  pgtype.Text      `json:"lname"`
+	Email                  pgtype.Text      `json:"email"`
+	Balance                pgtype.Int4      `json:"balance"`
+	Balancenotifythreshold pgtype.Int4      `json:"balancenotifythreshold"`
+	Rate                   int32            `json:"rate"`
+	Isarchived             pgtype.Bool      `json:"isarchived"`
+	CreatedAt              pgtype.Timestamp `json:"created_at"`
+	UpdateAt               pgtype.Timestamp `json:"update_at"`
 }
 
-type Artist struct {
-	ID       int32       `json:"id"`
-	Name     string      `json:"name"`
-	Birthday pgtype.Date `json:"birthday"`
-}
-
-type Purchase struct {
-	ID    int32       `json:"id"`
-	User  int32       `json:"user"`
-	Album int32       `json:"album"`
-	Date  pgtype.Date `json:"date"`
+type Event struct {
+	ID         pgtype.UUID      `json:"id"`
+	Date       pgtype.Timestamp `json:"date"`
+	Duration   pgtype.Numeric   `json:"duration"`
+	Type       pgtype.Text      `json:"type"`
+	Detail     pgtype.Text      `json:"detail"`
+	Rate       int32            `json:"rate"`
+	Amount     pgtype.Numeric   `json:"amount"`
+	Newbalance pgtype.Numeric   `json:"newbalance"`
 }
 
 type User struct {
-	ID       int32  `json:"id"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Balance  int32  `json:"balance"`
+	ID            pgtype.UUID      `json:"id"`
+	Username      string           `json:"username"`
+	Fname         string           `json:"fname"`
+	Lname         string           `json:"lname"`
+	Email         string           `json:"email"`
+	Salt          string           `json:"salt"`
+	Hash          string           `json:"hash"`
+	City          pgtype.Text      `json:"city"`
+	Nameforheader pgtype.Text      `json:"nameforheader"`
+	Phone         pgtype.Text      `json:"phone"`
+	State         pgtype.Text      `json:"state"`
+	Street        pgtype.Text      `json:"street"`
+	Zip           pgtype.Text      `json:"zip"`
+	License       pgtype.Text      `json:"license"`
+	Paymentinfo   []byte           `json:"paymentinfo"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
+	UpdatedAt     pgtype.Timestamp `json:"updated_at"`
 }

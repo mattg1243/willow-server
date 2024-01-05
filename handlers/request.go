@@ -9,8 +9,9 @@ import (
 type createUserRequest struct {
 	User struct {
 		Username string `json:"username" validate:"required"`
+		Password string `json:"password" validate:"required"`
 		Email string `json:"email" validate:"required,email"`
-		Balance int32 `json:"balance" validate:"required gte=0"`
+		Balance int32 `json:"balance" validate:"required,gte=0"`
 	} `json:"user"`
 }
 
@@ -27,6 +28,12 @@ func (r *createUserRequest) bind(c *fiber.Ctx, u *db.User, v *Validator) error {
 	u.Username = r.User.Username
 	u.Email = r.User.Email
 	u.Balance = r.User.Balance
+	// hash password
+	h, err := u.HashPassword(r.User.Password)
+	if err != nil {
+		return err
+	}
+	u.Hash = h
 
 	return nil
 }
@@ -52,6 +59,23 @@ func (r *updateUserRequest) bind(c *fiber.Ctx, u *db.User, v *Validator) error {
 	u.Username = r.User.Username
 	u.Email = r.User.Email
 	u.Balance = r.User.Balance
+
+	return nil
+}
+
+type loginUserRequest struct {
+	Username string `json:"username" validate:"required"`
+	Password string `json:"password" validate:"required"`
+}
+
+func (r *loginUserRequest) bind(c *fiber.Ctx, v *Validator) error {
+	if err :=c.BodyParser(r); err != nil {
+		return err
+	}
+
+	if err := v.Validate(r); err != nil {
+		return err
+	}
 
 	return nil
 }
