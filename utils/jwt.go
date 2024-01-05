@@ -24,12 +24,10 @@ func GenerateJWT(p JwtPayload) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["id"] = p.Id
-	claims["username"] = p.Username
 	claims["email"] = p.Email
 	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
 	return token.SignedString(secretKey);
 }
-
 
 func ValidateJWT (tokenString string) (interface{}, error) {
   // validate the hashing algorithm
