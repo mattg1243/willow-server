@@ -2,8 +2,14 @@ package handlers
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mattg1243/sqlc-fiber/db"
 )
+
+type PaymentInfo struct {
+	Venmo string `json:"venmo"`
+	PayPal string `json:"paypal"`
+}
 
 // user requests
 type createUserRequest struct {
@@ -59,37 +65,53 @@ func (r *createClientRequest) bind(c *fiber.Ctx, cl *db.Client, v *Validator) er
 	}
 
 	cl.Fname = r.Client.Fname
-	cl.Lname = r.Client.Lname
-	cl.Email = r.Client.Email
+	cl.Lname = pgtype.Text{String: r.Client.Lname}
+	cl.Email = pgtype.Text{String: r.Client.Email}
 	cl.Rate = int32(r.Client.Rate)
 
 	return nil
 }
 
-// type updateUserRequest struct {
-// 	User struct {
-// 		Username string `json:"username" validate:"required"`
-// 		Email string `json:"email" validate:"required,email"`
-// 		Balance int32 `json:"balance" validate:"required,gte=0"`
-// 	}
-// }
+type updateUserRequest struct {
+	User struct {
+		Fname string `json:"fname"`
+		Lname string `json:"lname"`
+		Phone string `json:"phone"`
+		NameForHeader string `json:"nameForHeader"`
+		Street string `json:"street"`
+		City string `json:"city"`
+		Zip string `json:"zip"`
+		State string `json:"state"`
+		License string `json:"license"`
+		PyamentInfo PaymentInfo `json:"paymentInfo"`
+	}
+}
 
-// func (r *updateUserRequest) bind(c *fiber.Ctx, u *db.User, v *Validator) error {
-// 	// validate
-// 	if err := c.BodyParser(r); err != nil {
-// 		return err
-// 	}
+func (r *updateUserRequest) bind(c *fiber.Ctx, u *db.User, v *Validator) error {
+	// validate
+	if err := c.BodyParser(r); err != nil {
+		return err
+	}
 
-// 	if err := v.Validate(r); err != nil {
-// 		return err
-// 	}
+	if err := v.Validate(r); err != nil {
+		return err
+	}
 
-// 	u.Username = r.User.Username
-// 	u.Email = r.User.Email
-// 	u.Balance = r.User.Balance
+	u.Fname = r.User.Fname
+	u.Lname = r.User.Lname
+	u.Phone = pgtype.Text{String: r.User.Phone}
+	u.Nameforheader = r.User.NameForHeader
+	u.Street = pgtype.Text{String: r.User.Street}
+	u.City = pgtype.Text{String: r.User.City}
+	u.Zip = pgtype.Text{String: r.User.Zip}
+	u.State = pgtype.Text{String: r.User.State}
+	u.License = pgtype.Text{String: r.User.License}
+	// need to improve typing on this
+	
+	// u.Paymentinfo = r.User.Paymentinfo
 
-// 	return nil
-// }
+	return nil
+}
 
 // type loginUserRequest struct {
 // 	Username string `json:"username" validate:"required"`

@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/google/uuid"
 	"github.com/mattg1243/sqlc-fiber/db"
 )
 
@@ -26,10 +26,27 @@ func (h *Handler) CreateClientHandler(c* fiber.Ctx) error {
 	if !ok {
 		return c.Status(http.StatusBadRequest).JSON("No user Id found with request")
 	}
-	
-	var uuid pgtype.UUID
-	// if err != nil {
-	// 	return c.Status(http.StatusInternalServerError).JSON("UUID conversion error")
-	// }
-	// newClient, err := h.queries.CreateClient(c.Context(), db.CreateClientParams{UserID: uuid })
+
+	userId, err := uuid.Parse(claims.id)
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON("UUID conversion error")
+	}
+	newClient, err := h.queries.CreateClient(c.Context(), db.CreateClientParams{UserID: userId })
+
+	return c.Status(http.StatusCreated).JSON(newClient)
+}
+
+func (h *Handler) GetClientHandler(c* fiber.Ctx) error {
+	clientIdStr := c.Params("id")
+	clientId, err := uuid.Parse(clientIdStr)
+	if err != nil {
+		return c.Status(http.StatusBadRequest).JSON(err.Error())
+	}
+
+	client, err := h.queries.GetClient(c.Context(), clientId)
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(err.Error())
+	}
+
+	return c.Status(200).JSON(client)
 }

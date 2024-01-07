@@ -15,14 +15,15 @@ func LoadRoutes(a *fiber.App, h *handlers.Handler) {
 	userRoutes.Post("/", h.CreateUserHandler)
 	userRoutes.Get("/:id", h.GetUserHandler)
 	userRoutes.Put("/:id", h.UpdateUserHandler)
-	userRoutes.Delete("/:id", h.DeleteUserHandler)
+	// userRoutes.Delete("/:id", h.DeleteUserHandler)
 
-	userRoutes.Post("/login", h.LoginUserHandler)
+	// userRoutes.Post("/login", h.LoginUserHandler)
 
 	// client routes
 	clientRoutes := a.Group("/clients")
 
-	clientRoutes := a.Post("/", h.)
+	clientRoutes.Post("/", h.CreateClientHandler)
+	clientRoutes.Get("/:id", h.GetClientHandler)
 
 	// event routes
 
