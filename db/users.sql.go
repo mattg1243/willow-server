@@ -129,7 +129,7 @@ SET
     paymentInfo = $11,
     updated_at = NOW()
 WHERE
-    id = $1
+    id = $12
 RETURNING id, fname, lname, email, salt, hash, city, nameforheader, phone, state, street, zip, license, paymentinfo, created_at, updated_at
 `
 
@@ -145,6 +145,7 @@ type UpdateUserParams struct {
 	Zip           pgtype.Text `json:"zip"`
 	License       pgtype.Text `json:"license"`
 	Paymentinfo   []byte      `json:"paymentinfo"`
+	ID            uuid.UUID   `json:"id"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
@@ -160,6 +161,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		arg.Zip,
 		arg.License,
 		arg.Paymentinfo,
+		arg.ID,
 	)
 	var i User
 	err := row.Scan(
