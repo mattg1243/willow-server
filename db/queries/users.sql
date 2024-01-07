@@ -25,7 +25,7 @@ SET
     paymentInfo = $11,
     updated_at = NOW()
 WHERE
-    id = $1
+    id = $12
 RETURNING *;
 
 -- name: DeleteUser :exec

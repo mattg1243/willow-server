@@ -20,7 +20,7 @@ create table users (
 create table clients (
 	id uuid primary key not null,
   user_id uuid not null,
-	foreign key(user_id) references users (id),
+	foreign key(user_id) references users (id) on delete cascade,
 	fname varchar(255) not null,
 	lname varchar(255),
 	email varchar(255),
@@ -35,7 +35,7 @@ create table clients (
 create table events (
 	id uuid primary key not null,
   client_id uuid not null,
- 	foreign key (client_id) references clients (id),
+ 	foreign key (client_id) references clients (id) on delete cascade,
 	date timestamp not null,
 	duration decimal default 0,
 	"type" varchar(255),
