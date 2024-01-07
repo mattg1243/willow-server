@@ -6,8 +6,8 @@ import (
 )
 
 type Handler struct {
-	conn *pgx.Conn
-	queries *db.Queries
+	conn      *pgx.Conn
+	queries   *db.Queries
 	validator *Validator
 }
 

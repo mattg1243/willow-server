@@ -1,10 +1,10 @@
 package handlers
 
 import (
-  "time"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mattg1243/sqlc-fiber/db"
+	"time"
 )
 
 type PaymentInfo struct {
@@ -161,26 +161,26 @@ func (r *updateClientRequest) bind(c *fiber.Ctx, cl *db.Client, v *Validator) er
 	}
 
 	cl.Fname = r.Client.Fname
-  cl.Lname = pgtype.Text{String: r.Client.Lname}
+	cl.Lname = pgtype.Text{String: r.Client.Lname}
 	cl.Email = pgtype.Text{String: r.Client.Email}
 	cl.Balance = r.Client.Balance
 	cl.Balancenotifythreshold = r.Client.Balancenotifythreshold
 	cl.Rate = r.Client.Rate
-  cl.Isarchived = pgtype.Bool{Bool: r.Client.Isarchived}
+	cl.Isarchived = pgtype.Bool{Bool: r.Client.Isarchived}
 
-  pgTimestampLayout := "2006-01-02 15:04:05.999999-07"
+	pgTimestampLayout := "2006-01-02 15:04:05.999999-07"
 
-  createdAtStr, err := time.Parse(pgTimestampLayout, r.Client.CreatedAt)
-  if err != nil {
-    return err
-  }
-  updatedAtStr, err := time.Parse(pgTimestampLayout, r.Client.UpdateAt)
-  if err != nil {
-    return err
-  }
+	createdAtStr, err := time.Parse(pgTimestampLayout, r.Client.CreatedAt)
+	if err != nil {
+		return err
+	}
+	updatedAtStr, err := time.Parse(pgTimestampLayout, r.Client.UpdateAt)
+	if err != nil {
+		return err
+	}
 
-  cl.CreatedAt = pgtype.Timestamp{Time: createdAtStr}
-  cl.UpdateAt = pgtype.Timestamp{Time: updatedAtStr}
+	cl.CreatedAt = pgtype.Timestamp{Time: createdAtStr}
+	cl.UpdateAt = pgtype.Timestamp{Time: updatedAtStr}
 
 	return nil
 }

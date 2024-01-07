@@ -20,10 +20,10 @@ func (h *Handler) GetUserHandler(c *fiber.Ctx) error {
 	return c.Status(200).JSON(user)
 }
 
-func (h *Handler) CreateUserHandler(c* fiber.Ctx) error {
+func (h *Handler) CreateUserHandler(c *fiber.Ctx) error {
 	var user db.User
 	req := &createUserRequest{}
-	
+
 	if err := req.bind(c, &user, h.validator); err != nil {
 		return c.Status(http.StatusUnprocessableEntity).JSON(err.Error())
 	}
@@ -33,7 +33,7 @@ func (h *Handler) CreateUserHandler(c* fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(err.Error())
 	}
 
-	newUser, err := h.queries.CreateUser(c.Context(), db.CreateUserParams{ Hash: hash, Email: user.Email})
+	newUser, err := h.queries.CreateUser(c.Context(), db.CreateUserParams{Hash: hash, Email: user.Email})
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(err.Error())
 	}
@@ -61,17 +61,17 @@ func (h *Handler) UpdateUserHandler(c *fiber.Ctx) error {
 	}
 
 	updatedUser, err := h.queries.UpdateUser(c.Context(), db.UpdateUserParams{
-		Fname: req.User.Fname,
-		Lname: req.User.Lname,
-		Phone: pgtype.Text{String: req.User.Phone},
+		Fname:         req.User.Fname,
+		Lname:         req.User.Lname,
+		Phone:         pgtype.Text{String: req.User.Phone},
 		Nameforheader: req.User.NameForHeader,
-		Street: pgtype.Text{String: req.User.Street},
-		City: pgtype.Text{String: req.User.City},
-		Zip: pgtype.Text{String: req.User.Zip},
-		State: pgtype.Text{String: req.User.State},
-		License: pgtype.Text{String: req.User.License},
-		Paymentinfo: []byte(req.User.PyamentInfo.PayPal),
-		ID: userId,
+		Street:        pgtype.Text{String: req.User.Street},
+		City:          pgtype.Text{String: req.User.City},
+		Zip:           pgtype.Text{String: req.User.Zip},
+		State:         pgtype.Text{String: req.User.State},
+		License:       pgtype.Text{String: req.User.License},
+		Paymentinfo:   []byte(req.User.PyamentInfo.PayPal),
+		ID:            userId,
 	})
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(err.Error())
@@ -101,7 +101,7 @@ func (h *Handler) LoginUserHandler(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(http.StatusBadRequest).JSON(err.Error())
 	}
-	
+
 	req := loginUserRequest{}
 
 	if err := req.bind(c, h.validator); err != nil {
@@ -115,7 +115,7 @@ func (h *Handler) LoginUserHandler(c *fiber.Ctx) error {
 
 	match := user.CheckPassword(req.Password)
 
-	if (match) {
+	if match {
 		payload := utils.JwtPayload{Id: userId.String(), Email: user.Email}
 		jwt, err := utils.GenerateJWT(payload)
 		if err != nil {
@@ -123,12 +123,12 @@ func (h *Handler) LoginUserHandler(c *fiber.Ctx) error {
 			return c.Status(http.StatusInternalServerError).JSON(err.Error())
 		}
 		c.Cookie(&fiber.Cookie{
-			Name: "access-token",
-			Expires: time.Now().Add((time.Hour * 72)),
+			Name:     "access-token",
+			Expires:  time.Now().Add((time.Hour * 72)),
 			HTTPOnly: false,
-			Secure: false,
+			Secure:   false,
 			SameSite: "lax",
-			Value: jwt,
+			Value:    jwt,
 		})
 
 		return c.SendStatus(200)
