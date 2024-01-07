@@ -25,13 +25,26 @@ func main() {
 
 	dbUser := os.Getenv("DB_USER")
 	dbName := os.Getenv("DB_NAME")
-	
 
-	conn, err := pgx.Connect(ctx, fmt.Sprintf("user=%s dbname=%s", dbUser, dbName))
-	if err != nil {
-		log.Fatalf("An error occured:\n%s", err)
-		return;
-	}
+  var conn *pgx.Conn
+	
+  // if we are running in docker, we need to use the docker host
+  if (os.Getenv("DOCKER") == "true") {
+    dbHost := os.Getenv("DB_HOST")
+    dbPass := os.Getenv("DB_PASSWORD")
+    conn, err = pgx.Connect(ctx, fmt.Sprintf("host=%s user=%s password=%s dbname=%s", dbHost, dbUser, dbPass, dbName))
+    if err != nil {
+      log.Fatalf("An error occured:\n%s", err)
+      return;
+    }
+  } else {
+    conn, err = pgx.Connect(ctx, fmt.Sprintf("user=%s dbname=%s", dbUser, dbName))
+    if err != nil {
+      log.Fatalf("An error occured:\n%s", err)
+      return;
+    }
+  }
+
 	defer conn.Close(ctx)
 	// initialize Handler instance
 	handler := handlers.NewHandler(conn)
