@@ -8,9 +8,7 @@ import (
 	"github.com/mattg1243/sqlc-fiber/utils"
 )
 
-
-
-func AuthJwt (c *fiber.Ctx) error {
+func AuthJwt(c *fiber.Ctx) error {
 	key := os.Getenv("JWT_SECRET")
 	claims, err := utils.ValidateJWT(key)
 	if err != nil {
