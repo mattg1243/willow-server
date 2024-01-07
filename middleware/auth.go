@@ -1,18 +1,22 @@
 package middleware
 
 import (
-	"fmt"
+	"errors"
+	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/mattg1243/sqlc-fiber/utils"
 )
 
-func AuthJwt (c *fiber.Ctx, key string) (bool, error) {
-	fmt.Print(c.Cookies("access-token"))
+
+
+func AuthJwt (c *fiber.Ctx) error {
+	key := os.Getenv("JWT_SECRET")
 	claims, err := utils.ValidateJWT(key)
 	if err != nil {
-		return false, c.Status(401).JSON(err.Error())
+		return errors.New("Invalid credentials")
 	}
-	c.Locals("user", claims)
-	return true, nil
+
+	c.Locals("jwtClaims", claims)
+	return c.Next()
 }

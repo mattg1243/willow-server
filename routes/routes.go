@@ -3,6 +3,7 @@ package routes
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/mattg1243/sqlc-fiber/handlers"
+	"github.com/mattg1243/sqlc-fiber/middleware"
 )
 
 func LoadRoutes(a *fiber.App, h *handlers.Handler) {
@@ -14,7 +15,7 @@ func LoadRoutes(a *fiber.App, h *handlers.Handler) {
 
 	userRoutes.Post("/", h.CreateUserHandler)
 	userRoutes.Get("/:id", h.GetUserHandler)
-	userRoutes.Put("/:id", h.UpdateUserHandler)
+	userRoutes.Put("/:id", middleware.AuthJwt, h.UpdateUserHandler)
 	// userRoutes.Delete("/:id", h.DeleteUserHandler)
 
 	// userRoutes.Post("/login", h.LoginUserHandler)
@@ -24,6 +25,7 @@ func LoadRoutes(a *fiber.App, h *handlers.Handler) {
 
 	clientRoutes.Post("/", h.CreateClientHandler)
 	clientRoutes.Get("/:id", h.GetClientHandler)
+	// clientRoutes.Put("/:id", )
 
 	// event routes
 
