@@ -5,12 +5,13 @@
 package db
 
 import (
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Client struct {
-	ID                     pgtype.UUID      `json:"id"`
-	UserID                 pgtype.UUID      `json:"user_id"`
+	ID                     uuid.UUID        `json:"id"`
+	UserID                 uuid.UUID        `json:"user_id"`
 	Fname                  string           `json:"fname"`
 	Lname                  pgtype.Text      `json:"lname"`
 	Email                  pgtype.Text      `json:"email"`
@@ -23,8 +24,8 @@ type Client struct {
 }
 
 type Event struct {
-	ID         pgtype.UUID      `json:"id"`
-	ClientID   pgtype.UUID      `json:"client_id"`
+	ID         uuid.UUID        `json:"id"`
+	ClientID   uuid.UUID        `json:"client_id"`
 	Date       pgtype.Timestamp `json:"date"`
 	Duration   pgtype.Numeric   `json:"duration"`
 	Type       pgtype.Text      `json:"type"`
@@ -35,15 +36,14 @@ type Event struct {
 }
 
 type User struct {
-	ID            pgtype.UUID      `json:"id"`
-	Username      string           `json:"username"`
+	ID            uuid.UUID        `json:"id"`
 	Fname         string           `json:"fname"`
 	Lname         string           `json:"lname"`
 	Email         string           `json:"email"`
 	Salt          string           `json:"salt"`
 	Hash          string           `json:"hash"`
 	City          pgtype.Text      `json:"city"`
-	Nameforheader pgtype.Text      `json:"nameforheader"`
+	Nameforheader string           `json:"nameforheader"`
 	Phone         pgtype.Text      `json:"phone"`
 	State         pgtype.Text      `json:"state"`
 	Street        pgtype.Text      `json:"street"`

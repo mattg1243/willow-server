@@ -8,6 +8,7 @@ package db
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -59,7 +60,7 @@ DELETE FROM events
 WHERE id = $1
 `
 
-func (q *Queries) DeleteEvent(ctx context.Context, id pgtype.UUID) error {
+func (q *Queries) DeleteEvent(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.Exec(ctx, deleteEvent, id)
 	return err
 }
@@ -70,7 +71,7 @@ FROM events
 WHERE id = $1
 `
 
-func (q *Queries) GetEvent(ctx context.Context, id pgtype.UUID) (Event, error) {
+func (q *Queries) GetEvent(ctx context.Context, id uuid.UUID) (Event, error) {
 	row := q.db.QueryRow(ctx, getEvent, id)
 	var i Event
 	err := row.Scan(
@@ -93,7 +94,7 @@ FROM events
 WHERE events.client_id = $1
 `
 
-func (q *Queries) GetEvents(ctx context.Context, clientID pgtype.UUID) ([]Event, error) {
+func (q *Queries) GetEvents(ctx context.Context, clientID uuid.UUID) ([]Event, error) {
 	rows, err := q.db.Query(ctx, getEvents, clientID)
 	if err != nil {
 		return nil, err
@@ -138,7 +139,7 @@ WHERE
 `
 
 type UpdateEventParams struct {
-	ID         pgtype.UUID      `json:"id"`
+	ID         uuid.UUID        `json:"id"`
 	Date       pgtype.Timestamp `json:"date"`
 	Duration   pgtype.Numeric   `json:"duration"`
 	Type       pgtype.Text      `json:"type"`

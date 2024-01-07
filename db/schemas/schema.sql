@@ -1,13 +1,12 @@
 create table users (
-	id uuid primary key,
-	username varchar (255) unique not null,
+	id uuid primary key not null,
 	fname varchar (50) not null,
 	lname varchar (50) not null,
 	email varchar (255) unique not null,
-	salt text not null,
-	hash text not null,
+	salt varchar (255) not null,
+	"hash" varchar (255) not null,
 	city varchar (255),
-	nameForHeader varchar (255), 
+	nameForHeader varchar (255) not null, 
 	phone varchar (255),
 	"state" varchar (255),
 	street varchar (255),
@@ -19,7 +18,7 @@ create table users (
 );
 
 create table clients (
-	id uuid primary key,
+	id uuid primary key not null,
   user_id uuid not null,
 	foreign key(user_id) references users (id),
 	fname varchar(255) not null,
@@ -34,7 +33,7 @@ create table clients (
 );
 
 create table events (
-	id uuid primary key,
+	id uuid primary key not null,
   client_id uuid not null,
  	foreign key (client_id) references clients (id),
 	date timestamp not null,

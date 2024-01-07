@@ -8,6 +8,7 @@ package db
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -20,7 +21,7 @@ INSERT INTO clients (
 `
 
 type CreateClientParams struct {
-	UserID pgtype.UUID `json:"user_id"`
+	UserID uuid.UUID   `json:"user_id"`
 	Fname  string      `json:"fname"`
 	Lname  pgtype.Text `json:"lname"`
 	Email  pgtype.Text `json:"email"`
@@ -57,7 +58,7 @@ DELETE FROM clients
 WHERE id = $1
 `
 
-func (q *Queries) DeleteClient(ctx context.Context, id pgtype.UUID) error {
+func (q *Queries) DeleteClient(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.Exec(ctx, deleteClient, id)
 	return err
 }
@@ -68,7 +69,7 @@ FROM clients
 WHERE id = $1
 `
 
-func (q *Queries) GetClient(ctx context.Context, id pgtype.UUID) (Client, error) {
+func (q *Queries) GetClient(ctx context.Context, id uuid.UUID) (Client, error) {
 	row := q.db.QueryRow(ctx, getClient, id)
 	var i Client
 	err := row.Scan(
@@ -93,7 +94,7 @@ FROM clients
 WHERE clients.user_id = $1
 `
 
-func (q *Queries) GetClients(ctx context.Context, userID pgtype.UUID) ([]Client, error) {
+func (q *Queries) GetClients(ctx context.Context, userID uuid.UUID) ([]Client, error) {
 	rows, err := q.db.Query(ctx, getClients, userID)
 	if err != nil {
 		return nil, err
@@ -141,7 +142,7 @@ WHERE
 `
 
 type UpdateClientParams struct {
-	ID                     pgtype.UUID `json:"id"`
+	ID                     uuid.UUID   `json:"id"`
 	Fname                  string      `json:"fname"`
 	Lname                  pgtype.Text `json:"lname"`
 	Email                  pgtype.Text `json:"email"`
