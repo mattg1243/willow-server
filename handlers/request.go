@@ -113,22 +113,22 @@ func (r *updateUserRequest) bind(c *fiber.Ctx, u *db.User, v *Validator) error {
 	return nil
 }
 
-// type loginUserRequest struct {
-// 	Username string `json:"username" validate:"required"`
-// 	Password string `json:"password" validate:"required"`
-// }
+type loginUserRequest struct {
+	Username string `json:"username" validate:"required"`
+	Password string `json:"password" validate:"required"`
+}
 
-// func (r *loginUserRequest) bind(c *fiber.Ctx, v *Validator) error {
-// 	if err :=c.BodyParser(r); err != nil {
-// 		return err
-// 	}
+func (r *loginUserRequest) bind(c *fiber.Ctx, v *Validator) error {
+	if err :=c.BodyParser(r); err != nil {
+		return err
+	}
 
-// 	if err := v.Validate(r); err != nil {
-// 		return err
-// 	}
+	if err := v.Validate(r); err != nil {
+		return err
+	}
 
-// 	return nil
-// }
+	return nil
+}
 
 // TODO create request structs and bind funcs for the routes corresponding to the other models
 
