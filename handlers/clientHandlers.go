@@ -43,42 +43,34 @@ func (h *Handler) CreateClientHandler(c *fiber.Ctx) error {
 }
 
 func (h *Handler) GetClientHandler(c *fiber.Ctx) error {
-	clientIDStr := c.Params("id")
-	clientID, err := uuid.Parse(clientIDStr)
-	if err != nil {
-		return c.Status(http.StatusBadRequest).JSON(err.Error())
-	}
-
-	client, err := h.queries.GetClient(c.Context(), clientID)
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(err.Error())
-	}
-
-	return c.Status(200).JSON(client)
-}
-
-func (h *Handler) GetClientsHandler(c *fiber.Ctx) error {
 	user := c.Locals("user")
-	claims, ok := user.(*JwtClaims)
-	if !ok {
-		return c.Status(http.StatusBadRequest).JSON("No user Id found with request")
-	}
-
-	userID, err := uuid.Parse(claims.id)
+	userID, err := uuid.Parse(user.(string))
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON("UUID conversion error")
 	}
-
-	clients, err := h.queries.GetClients(c.Context(), userID)
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(err.Error())
+	
+	clientIDStr := c.Queries()["id"]
+	if clientIDStr == "" {
+		clients, err := h.queries.GetClients(c.Context(), userID)
+		if err != nil {
+			return c.Status(http.StatusInternalServerError).JSON(err.Error())
+		}
+		return c.Status(200).JSON(clients)
+	} else {
+		id, err := uuid.Parse(clientIDStr)
+		if err != nil {
+			return c.Status(http.StatusBadRequest).JSON(err.Error())
+		}
+		clients, err := h.queries.GetClient(c.Context(), id)
+		if err != nil {
+			return c.Status(http.StatusInternalServerError).JSON(err.Error())
+		}
+		return c.Status(200).JSON(clients)
 	}
-
-	return c.Status(200).JSON(clients)
 }
 
 func (h *Handler) UpdateClientHandler(c *fiber.Ctx) error {
-	clientIDStr := c.Params("id")
+	clientIDStr := c.Queries()["id"]
 	clientID, err := uuid.Parse(clientIDStr)
 	if err != nil {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
