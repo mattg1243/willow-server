@@ -40,7 +40,6 @@ type User struct {
 	Fname         string           `json:"fname"`
 	Lname         string           `json:"lname"`
 	Email         string           `json:"email"`
-	Salt          string           `json:"salt"`
 	Hash          string           `json:"hash"`
 	City          pgtype.Text      `json:"city"`
 	Nameforheader string           `json:"nameforheader"`
