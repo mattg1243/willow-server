@@ -22,17 +22,22 @@ func (h *Handler) CreateClientHandler(c *fiber.Ctx) error {
 		return c.Status(http.StatusUnprocessableEntity).JSON(err.Error())
 	}
 
-	user := c.Locals("user")
-	claims, ok := user.(*JwtClaims)
-	if !ok {
-		return c.Status(http.StatusBadRequest).JSON("No user Id found with request")
-	}
-
-	userID, err := uuid.Parse(claims.id)
+	user := c.Locals("user").(string)
+	userID, err := uuid.Parse(user)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON("UUID conversion error")
 	}
-	newClient, err := h.queries.CreateClient(c.Context(), db.CreateClientParams{UserID: userID})
+	newClient, err := h.queries.CreateClient(c.Context(), db.CreateClientParams{
+		UserID: userID, 
+		Fname: client.Fname,
+		Lname: client.Lname,
+		Email: client.Email,
+		ID: uuid.New(),
+	})
+
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(err.Error())
+	}
 
 	return c.Status(http.StatusCreated).JSON(newClient)
 }

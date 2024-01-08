@@ -1,8 +1,8 @@
 -- name: CreateClient :one
 INSERT INTO clients (
-  user_id, fname, lname, email, rate
+  user_id, fname, lname, email, phone, rate, balanceNotifyThreshold, id, created_at, updated_at
 ) VALUES (
-  $1, $2, $3, $4, $5
+  $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()
 ) RETURNING *;
 
 -- name: GetClient :one

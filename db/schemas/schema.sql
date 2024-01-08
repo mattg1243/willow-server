@@ -23,12 +23,13 @@ create table clients (
 	fname varchar(255) not null,
 	lname varchar(255),
 	email varchar(255),
+	phone varchar(255),
 	balance int default 0 not null,
 	balanceNotifyThreshold int default 0 not null,
 	rate int not null,
 	isArchived boolean default false,
 	created_at timestamp not null,
-	update_at timestamp
+	updated_at timestamp
 );
 
 create table events (

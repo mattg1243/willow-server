@@ -3,10 +3,11 @@ package handlers
 import (
 	"encoding/json"
 
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mattg1243/sqlc-fiber/db"
-	"time"
 )
 
 type PaymentInfo struct {
@@ -54,6 +55,8 @@ type createClientRequest struct {
 		Lname string `json:"lname"`
 		Email string `json:"email"`
 		Rate  int16  `json:"rate" validate:"required"`
+		Phone string `json:"phone"`
+		Balancenotifythreshold int16 `json:"balanceNotifyThreshold"`
 	} `json:"client"`
 }
 
@@ -71,6 +74,8 @@ func (r *createClientRequest) bind(c *fiber.Ctx, cl *db.Client, v *Validator) er
 	cl.Lname = pgtype.Text{String: r.Client.Lname, Valid: true}
 	cl.Email = pgtype.Text{String: r.Client.Email, Valid: true}
 	cl.Rate = int32(r.Client.Rate)
+	cl.Phone = pgtype.Text{String: r.Client.Phone, Valid: true}
+	cl.Balancenotifythreshold = int32(r.Client.Balancenotifythreshold)
 
 	return nil
 }
@@ -190,7 +195,7 @@ func (r *updateClientRequest) bind(c *fiber.Ctx, cl *db.Client, v *Validator) er
 	}
 
 	cl.CreatedAt = pgtype.Timestamp{Time: createdAtStr}
-	cl.UpdateAt = pgtype.Timestamp{Time: updatedAtStr}
+	cl.UpdatedAt = pgtype.Timestamp{Time: updatedAtStr}
 
 	return nil
 }

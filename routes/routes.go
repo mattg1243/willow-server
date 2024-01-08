@@ -22,10 +22,10 @@ func LoadRoutes(a *fiber.App, h *handlers.Handler) {
 	// userRoutes.Post("/login", h.LoginUserHandler)
 
 	// client routes
-	clientRoutes := a.Group("/clients")
+	clientRoutes := a.Group("/client")
 
-	clientRoutes.Post("/", h.CreateClientHandler)
-	clientRoutes.Get("/:id", h.GetClientHandler)
+	clientRoutes.Post("/",middleware.AuthJwt, h.CreateClientHandler)
+	clientRoutes.Get("/:id", middleware.AuthJwt, h.GetClientHandler)
 	// TODO: test route
 	clientRoutes.Get("/", middleware.AuthJwt, h.GetClientsHandler)
 	// TODO: test route, impl middleware hook
