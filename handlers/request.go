@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"encoding/json"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mattg1243/sqlc-fiber/db"
@@ -65,8 +67,8 @@ func (r *createClientRequest) bind(c *fiber.Ctx, cl *db.Client, v *Validator) er
 	}
 
 	cl.Fname = r.Client.Fname
-	cl.Lname = pgtype.Text{String: r.Client.Lname}
-	cl.Email = pgtype.Text{String: r.Client.Email}
+	cl.Lname = pgtype.Text{String: r.Client.Lname, Valid: true}
+	cl.Email = pgtype.Text{String: r.Client.Email, Valid: true}
 	cl.Rate = int32(r.Client.Rate)
 
 	return nil
@@ -97,15 +99,23 @@ func (r *updateUserRequest) bind(c *fiber.Ctx, u *db.User, v *Validator) error {
 		return err
 	}
 
+	// marshall payment info
+	piBytes, err := json.Marshal(r.User.PyamentInfo)
+
+	if err != nil {
+		return err
+	}
+
 	u.Fname = r.User.Fname
 	u.Lname = r.User.Lname
-	u.Phone = pgtype.Text{String: r.User.Phone}
+	u.Phone = pgtype.Text{String: r.User.Phone, Valid: true}
 	u.Nameforheader = r.User.NameForHeader
-	u.Street = pgtype.Text{String: r.User.Street}
-	u.City = pgtype.Text{String: r.User.City}
-	u.Zip = pgtype.Text{String: r.User.Zip}
-	u.State = pgtype.Text{String: r.User.State}
-	u.License = pgtype.Text{String: r.User.License}
+	u.Street = pgtype.Text{String: r.User.Street, Valid: true}
+	u.City = pgtype.Text{String: r.User.City, Valid: true}
+	u.Zip = pgtype.Text{String: r.User.Zip, Valid: true}
+	u.State = pgtype.Text{String: r.User.State, Valid: true}
+	u.License = pgtype.Text{String: r.User.License, Valid: true}
+	u.Paymentinfo = piBytes
 	// need to improve typing on this
 	
 	// u.Paymentinfo = r.User.Paymentinfo
@@ -114,7 +124,7 @@ func (r *updateUserRequest) bind(c *fiber.Ctx, u *db.User, v *Validator) error {
 }
 
 type loginUserRequest struct {
-	Username string `json:"username" validate:"required"`
+	Email string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required"`
 }
 

@@ -11,12 +11,13 @@ func LoadRoutes(a *fiber.App, h *handlers.Handler) {
 	a.Get("/", h.GetRootHandler)
 	
 	// user routes
-	userRoutes := a.Group("/users")
+	userRoutes := a.Group("/user")
 
 	userRoutes.Post("/", h.CreateUserHandler)
-	userRoutes.Get("/:id", h.GetUserHandler)
-	userRoutes.Put("/:id", middleware.AuthJwt, h.UpdateUserHandler)
-	// userRoutes.Delete("/:id", h.DeleteUserHandler)
+	userRoutes.Post("/login", h.LoginUserHandler)
+	userRoutes.Get("/", h.GetUserHandler)
+	userRoutes.Put("/", middleware.AuthJwt, h.UpdateUserHandler)
+	userRoutes.Delete("/", h.DeleteUserHandler)
 
 	// userRoutes.Post("/login", h.LoginUserHandler)
 

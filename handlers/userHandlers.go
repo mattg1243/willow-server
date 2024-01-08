@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/google/uuid"
 	"github.com/mattg1243/sqlc-fiber/db"
 	"github.com/mattg1243/sqlc-fiber/utils"
 )
@@ -33,7 +33,19 @@ func (h *Handler) CreateUserHandler(c* fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(err.Error())
 	}
 
-	newUser, err := h.queries.CreateUser(c.Context(), db.CreateUserParams{ Hash: hash, Email: user.Email})
+	newUser, err := h.queries.CreateUser(c.Context(), db.CreateUserParams{ 
+		Hash: hash, 
+		Email: user.Email,
+		Fname: user.Fname,
+		Lname: user.Lname,
+		Nameforheader: user.Nameforheader,
+		Phone: user.Phone,
+		Street: user.Street,
+		City: user.City,
+		State: user.State,
+		Zip: user.Zip,
+		ID: uuid.New(),
+	})
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(err.Error())
 	}
@@ -49,9 +61,8 @@ func (h *Handler) UpdateUserHandler(c *fiber.Ctx) error {
 	req := &updateUserRequest{}
 
 	// parse user id from claims
-	claims := c.Locals("jwtClaims")
-
-	userId, err := utils.ParseUserIdFromClaims(claims)
+	userIdStr := c.Locals("user")
+	userId, err := uuid.Parse(userIdStr.(string))
 	if err != nil {
 		return c.Status(http.StatusBadRequest).JSON(err.Error())
 	}
@@ -61,16 +72,16 @@ func (h *Handler) UpdateUserHandler(c *fiber.Ctx) error {
 	}
 
 	updatedUser, err := h.queries.UpdateUser(c.Context(), db.UpdateUserParams{
-		Fname: req.User.Fname,
-		Lname: req.User.Lname,
-		Phone: pgtype.Text{String: req.User.Phone},
-		Nameforheader: req.User.NameForHeader,
-		Street: pgtype.Text{String: req.User.Street},
-		City: pgtype.Text{String: req.User.City},
-		Zip: pgtype.Text{String: req.User.Zip},
-		State: pgtype.Text{String: req.User.State},
-		License: pgtype.Text{String: req.User.License},
-		Paymentinfo: []byte(req.User.PyamentInfo.PayPal),
+		Fname: user.Fname,
+		Lname: user.Lname,
+		Phone: user.Phone,
+		Nameforheader: user.Nameforheader,
+		Street: user.Street,
+		City: user.City,
+		Zip: user.Zip,
+		State: user.State,
+		License: user.License,
+		Paymentinfo: user.Paymentinfo,
 		ID: userId,
 	})
 	if err != nil {
@@ -81,8 +92,8 @@ func (h *Handler) UpdateUserHandler(c *fiber.Ctx) error {
 }
 
 func (h *Handler) DeleteUserHandler(c *fiber.Ctx) error {
-	claims := c.Locals("jwtClaims")
-	userId, err := utils.ParseUserIdFromClaims(claims)
+	userIdStr := c.Locals("user").(string)
+	userId, err := uuid.Parse(userIdStr)
 	if err != nil {
 		return c.Status(http.StatusBadRequest).JSON(err.Error())
 	}
@@ -96,11 +107,6 @@ func (h *Handler) DeleteUserHandler(c *fiber.Ctx) error {
 }
 
 func (h *Handler) LoginUserHandler(c *fiber.Ctx) error {
-	claims := c.Locals("jwtClaims")
-	userId, err := utils.ParseUserIdFromClaims(claims)
-	if err != nil {
-		return c.Status(http.StatusBadRequest).JSON(err.Error())
-	}
 	
 	req := loginUserRequest{}
 
@@ -108,7 +114,7 @@ func (h *Handler) LoginUserHandler(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(err.Error())
 	}
 
-	user, err := h.queries.GetUser(c.Context(), userId)
+	user, err := h.queries.GetUserByEmail(c.Context(), req.Email)
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(err.Error())
 	}
@@ -116,14 +122,14 @@ func (h *Handler) LoginUserHandler(c *fiber.Ctx) error {
 	match := user.CheckPassword(req.Password)
 
 	if (match) {
-		payload := utils.JwtPayload{Id: userId.String(), Email: user.Email}
+		payload := utils.JwtPayload{Id: user.ID.String(), Email: user.Email}
 		jwt, err := utils.GenerateJWT(payload)
 		if err != nil {
 			log.Fatalf(err.Error())
 			return c.Status(http.StatusInternalServerError).JSON(err.Error())
 		}
 		c.Cookie(&fiber.Cookie{
-			Name: "access-token",
+			Name: "willow-access-token",
 			Expires: time.Now().Add((time.Hour * 72)),
 			HTTPOnly: false,
 			Secure: false,
