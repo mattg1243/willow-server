@@ -9,7 +9,7 @@ import (
 )
 
 type JwtPayload struct {
-	Id string `json:"id"`
+	Id    string `json:"id"`
 	Email string `json:"email"`
 	jwt.StandardClaims
 }

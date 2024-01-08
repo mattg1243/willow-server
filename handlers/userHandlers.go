@@ -20,10 +20,10 @@ func (h *Handler) GetUserHandler(c *fiber.Ctx) error {
 	return c.Status(200).JSON(user)
 }
 
-func (h *Handler) CreateUserHandler(c* fiber.Ctx) error {
+func (h *Handler) CreateUserHandler(c *fiber.Ctx) error {
 	var user db.User
 	req := &createUserRequest{}
-	
+
 	if err := req.bind(c, &user, h.validator); err != nil {
 		return c.Status(http.StatusUnprocessableEntity).JSON(err.Error())
 	}
@@ -132,9 +132,9 @@ func (h *Handler) LoginUserHandler(c *fiber.Ctx) error {
 			Name: "willow-access-token",
 			Expires: time.Now().Add((time.Hour * 72)),
 			HTTPOnly: false,
-			Secure: false,
+			Secure:   false,
 			SameSite: "lax",
-			Value: jwt,
+			Value:    jwt,
 		})
 
 		return c.SendStatus(200)
