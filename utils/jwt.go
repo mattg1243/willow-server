@@ -4,55 +4,44 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"time"
 
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
+	"github.com/dgrijalva/jwt-go"
 )
 
 type JwtPayload struct {
 	Id string `json:"id"`
 	Email string `json:"email"`
-	Exp string `json:"exp"`
-	jwt.Claims
+	jwt.StandardClaims
 }
 
+
+var secretString = os.Getenv("JWT_SECRET")
+
 func GenerateJWT(p JwtPayload) (string, error) {
-	secretString := os.Getenv("JWT_SECRET")
+	
 	secretKey := []byte(secretString)
-	token := jwt.New(jwt.SigningMethodHS256)
-	claims := token.Claims.(jwt.MapClaims)
-	claims["id"] = p.Id
-	claims["email"] = p.Email
-	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
+	claims := &jwt.MapClaims{
+			"id": p.Id,
+			"email": p.Email,
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	
 	return token.SignedString(secretKey);
 }
 
-func ValidateJWT (tokenString string) (JwtPayload, error) {
-  // validate the hashing algorithm
+func ValidateJWT (tokenString string) (*JwtPayload, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &JwtPayload{}, func(t *jwt.Token) (interface{}, error) {
-		return []byte(tokenString), nil
+		return []byte(secretString), nil
 	})
-	
+	fmt.Print(token)
 	if err != nil {
 		fmt.Printf("error: %v", err.Error());
-		return JwtPayload{}, err
+		return &JwtPayload{}, err
 	}
 
-	if claims, ok := token.Claims.(*JwtPayload); ok {
-		fmt.Println(claims)
-		return JwtPayload{}, nil;
+	if claims, ok := token.Claims.(*JwtPayload); ok && token.Valid {
+		return claims, nil
 	} else {
-		fmt.Printf("error: %v ", err.Error())
-		return JwtPayload{}, nil
+		return &JwtPayload{}, errors.New("Error decoding token; invalid token")
 	}
-}
-
-func ParseUserIdFromClaims (claims interface{}) (uuid.UUID, error) {
-	claimsParsed, ok := claims.(*JwtPayload)
-	if !ok {
-		return uuid.UUID{}, errors.New("Claims could not be parsed into a JwtPayload struct")
-	}
-
-	return uuid.Parse(claimsParsed.Id)
 }
