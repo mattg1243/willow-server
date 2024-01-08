@@ -145,7 +145,8 @@ SET
     balancenotifythreshold = $6,
     rate = $7,
     isarchived = $8,
-    update_at = NOW()
+    update_at = NOW(),
+    created_at = created_at
 WHERE
     id = $1
 `
