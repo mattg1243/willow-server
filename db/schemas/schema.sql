@@ -3,7 +3,6 @@ create table users (
 	fname varchar (50) not null,
 	lname varchar (50) not null,
 	email varchar (255) unique not null,
-	salt varchar (255) not null,
 	"hash" varchar (255) not null,
 	city varchar (255),
 	nameForHeader varchar (255) not null, 

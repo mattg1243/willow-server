@@ -14,17 +14,16 @@ import (
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
-    fname, lname, email, salt, "hash", city, nameforheader, phone, "state", street, zip, license, paymentinfo
+    fname, lname, email, "hash", city, nameforheader, phone, "state", street, zip, license, paymentinfo, id, created_at, updated_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
-) RETURNING id, fname, lname, email, salt, hash, city, nameforheader, phone, state, street, zip, license, paymentinfo, created_at, updated_at
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW()
+) RETURNING id, fname, lname, email, hash, city, nameforheader, phone, state, street, zip, license, paymentinfo, created_at, updated_at
 `
 
 type CreateUserParams struct {
 	Fname         string      `json:"fname"`
 	Lname         string      `json:"lname"`
 	Email         string      `json:"email"`
-	Salt          string      `json:"salt"`
 	Hash          string      `json:"hash"`
 	City          pgtype.Text `json:"city"`
 	Nameforheader string      `json:"nameforheader"`
@@ -34,6 +33,7 @@ type CreateUserParams struct {
 	Zip           pgtype.Text `json:"zip"`
 	License       pgtype.Text `json:"license"`
 	Paymentinfo   []byte      `json:"paymentinfo"`
+	ID            uuid.UUID   `json:"id"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -41,7 +41,6 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.Fname,
 		arg.Lname,
 		arg.Email,
-		arg.Salt,
 		arg.Hash,
 		arg.City,
 		arg.Nameforheader,
@@ -51,6 +50,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.Zip,
 		arg.License,
 		arg.Paymentinfo,
+		arg.ID,
 	)
 	var i User
 	err := row.Scan(
@@ -58,7 +58,6 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Fname,
 		&i.Lname,
 		&i.Email,
-		&i.Salt,
 		&i.Hash,
 		&i.City,
 		&i.Nameforheader,
@@ -85,7 +84,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id uuid.UUID) error {
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, fname, lname, email, salt, hash, city, nameforheader, phone, state, street, zip, license, paymentinfo, created_at, updated_at FROM users
+SELECT id, fname, lname, email, hash, city, nameforheader, phone, state, street, zip, license, paymentinfo, created_at, updated_at FROM users
 WHERE id = $1
 `
 
@@ -97,7 +96,34 @@ func (q *Queries) GetUser(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.Fname,
 		&i.Lname,
 		&i.Email,
-		&i.Salt,
+		&i.Hash,
+		&i.City,
+		&i.Nameforheader,
+		&i.Phone,
+		&i.State,
+		&i.Street,
+		&i.Zip,
+		&i.License,
+		&i.Paymentinfo,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, fname, lname, email, hash, city, nameforheader, phone, state, street, zip, license, paymentinfo, created_at, updated_at FROM users
+WHERE email = $1
+`
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Fname,
+		&i.Lname,
+		&i.Email,
 		&i.Hash,
 		&i.City,
 		&i.Nameforheader,
@@ -118,25 +144,23 @@ UPDATE users
 SET
     fname = $1,
     lname = $2,
-    email = $3,
-    city = $4,
-    nameForHeader = $5,
-    phone = $6,
-    "state" = $7,
-    street = $8,
-    zip = $9,
-    license = $10,
-    paymentInfo = $11,
+    city = $3,
+    nameForHeader = $4,
+    phone = $5,
+    "state" = $6,
+    street = $7,
+    zip = $8,
+    license = $9,
+    paymentInfo = $10,
     updated_at = NOW()
 WHERE
-    id = $12
-RETURNING id, fname, lname, email, salt, hash, city, nameforheader, phone, state, street, zip, license, paymentinfo, created_at, updated_at
+    id = $11
+RETURNING id, fname, lname, email, hash, city, nameforheader, phone, state, street, zip, license, paymentinfo, created_at, updated_at
 `
 
 type UpdateUserParams struct {
 	Fname         string      `json:"fname"`
 	Lname         string      `json:"lname"`
-	Email         string      `json:"email"`
 	City          pgtype.Text `json:"city"`
 	Nameforheader string      `json:"nameforheader"`
 	Phone         pgtype.Text `json:"phone"`
@@ -152,7 +176,6 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 	row := q.db.QueryRow(ctx, updateUser,
 		arg.Fname,
 		arg.Lname,
-		arg.Email,
 		arg.City,
 		arg.Nameforheader,
 		arg.Phone,
@@ -169,7 +192,6 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.Fname,
 		&i.Lname,
 		&i.Email,
-		&i.Salt,
 		&i.Hash,
 		&i.City,
 		&i.Nameforheader,

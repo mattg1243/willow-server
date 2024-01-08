@@ -19,7 +19,11 @@ sql:
               type: "UUID"
           - db_type: "integer"
             go_type: "int32"
-          - db_type: "text"
-            go_type: "string"
+          - column: "users.paymentInfo"
+            go_type:
+              import: "github.com/mattg1243/sqlc-fiber"
+              package: "db"
+              type: "PaymentInfo"
+
           
     
