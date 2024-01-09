@@ -12,19 +12,41 @@ import (
 )
 
 func (h *Handler) GetUserHandler(c *fiber.Ctx) error {
-	user, err := c.ParamsInt("id")
+	userIdStr := c.Locals("user")
+	userId, err := uuid.Parse(userIdStr.(string))
 	if err != nil {
 		return c.Status(http.StatusBadRequest).JSON(err.Error())
+	}
+
+	user, err := h.queries.GetUser(c.Context(), userId)
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(err.Error())
 	}
 
 	return c.Status(200).JSON(user)
 }
 
+func (h *Handler) GetUserContactInfo(c *fiber.Ctx) error {
+	userIdStr := c.Locals("user")
+	userId, err := uuid.Parse(userIdStr.(string))
+	if err != nil {
+		return c.Status(http.StatusBadRequest).JSON(err.Error())
+	}
+
+	contactInfo, err := h.queries.GetUserContactInfo(c.Context(), userId)
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(err.Error())
+	}
+
+	return c.Status(200).JSON(contactInfo)
+}
+
 func (h *Handler) CreateUserHandler(c *fiber.Ctx) error {
 	var user db.User
+	var contactInfo db.UserContactInfo
 	req := &createUserRequest{}
 
-	if err := req.bind(c, &user, h.validator); err != nil {
+	if err := req.bind(c, &user, &contactInfo, h.validator); err != nil {
 		return c.Status(http.StatusUnprocessableEntity).JSON(err.Error())
 	}
 	// hash the password
@@ -32,32 +54,38 @@ func (h *Handler) CreateUserHandler(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(err.Error())
 	}
-
+	// save user
 	newUser, err := h.queries.CreateUser(c.Context(), db.CreateUserParams{ 
 		Hash: hash, 
 		Email: user.Email,
 		Fname: user.Fname,
 		Lname: user.Lname,
 		Nameforheader: user.Nameforheader,
-		Phone: user.Phone,
-		Street: user.Street,
-		City: user.City,
-		State: user.State,
-		Zip: user.Zip,
 		ID: uuid.New(),
 	})
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(err.Error())
 	}
-	// dont send the hash to the client
-	newUser.Hash = ""
+	// save contact info
+	_, err = h.queries.CreateUserContactInfo(c.Context(), db.CreateUserContactInfoParams{
+		ID: uuid.New(),
+		Phone: contactInfo.Phone,
+		City: contactInfo.City,
+		State: contactInfo.State,
+		Street: contactInfo.Street,
+		Zip: contactInfo.Zip,
+		UserID: newUser.ID,
+	})
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(err.Error())
+	}
 
 	return c.Status(http.StatusCreated).JSON(newUser)
-
 }
 
 func (h *Handler) UpdateUserHandler(c *fiber.Ctx) error {
 	var user db.User
+	var contactInfo db.UserContactInfo
 	req := &updateUserRequest{}
 
 	// parse user id from claims
@@ -67,22 +95,29 @@ func (h *Handler) UpdateUserHandler(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(err.Error())
 	}
 
-	if err := req.bind(c, &user, h.validator); err != nil {
+	if err := req.bind(c, &user, &contactInfo, h.validator); err != nil {
 		return c.Status(http.StatusUnprocessableEntity).JSON(err.Error())
 	}
-
+	// save user
 	updatedUser, err := h.queries.UpdateUser(c.Context(), db.UpdateUserParams{
 		Fname: user.Fname,
 		Lname: user.Lname,
-		Phone: user.Phone,
 		Nameforheader: user.Nameforheader,
-		Street: user.Street,
-		City: user.City,
-		Zip: user.Zip,
-		State: user.State,
 		License: user.License,
-		Paymentinfo: user.Paymentinfo,
 		ID: userId,
+	})
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(err.Error())
+	}
+	// save contact info
+	_, err = h.queries.UpdateUserContactInfo(c.Context(), db.UpdateUserContactInfoParams{
+		UserID: userId,
+		Phone: contactInfo.Phone,
+		City: contactInfo.City,
+		State: contactInfo.State,
+		Street: contactInfo.Street,
+		Zip: contactInfo.Zip,
+		Paymentinfo: contactInfo.Paymentinfo,
 	})
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(err.Error())

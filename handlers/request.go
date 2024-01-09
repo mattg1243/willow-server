@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -23,9 +22,16 @@ type createUserRequest struct {
 		Fname    string `json:"fname" validate:"required"`
 		Lname    string `json:"lname" validate:"required"`
 	} `json:"user"`
+	ContactInfo struct {
+		Phone string `json:"phone"`
+		City string `json:"city"`
+		State string `json:"state"`
+		Street string `json:"street"`
+		Zip string `json:"zip"`
+	} `json:"contactInfo"`
 }
 
-func (r *createUserRequest) bind(c *fiber.Ctx, u *db.User, v *Validator) error {
+func (r *createUserRequest) bind(c *fiber.Ctx, u *db.User, cI *db.UserContactInfo, v *Validator) error {
 	// validate
 	if err := c.BodyParser(r); err != nil {
 		return err
@@ -34,7 +40,7 @@ func (r *createUserRequest) bind(c *fiber.Ctx, u *db.User, v *Validator) error {
 	if err := v.Validate(r); err != nil {
 		return err
 	}
-
+	// bind user
 	u.Fname = r.User.Fname
 	u.Lname = r.User.Lname
 	u.Email = r.User.Email
@@ -44,6 +50,12 @@ func (r *createUserRequest) bind(c *fiber.Ctx, u *db.User, v *Validator) error {
 		return err
 	}
 	u.Hash = h
+	// save contact info
+	cI.Phone = pgtype.Text{String: r.ContactInfo.Phone, Valid: true}
+	cI.City = pgtype.Text{String: r.ContactInfo.City, Valid: true}
+	cI.State = pgtype.Text{String: r.ContactInfo.State, Valid: true}
+	cI.Street = pgtype.Text{String: r.ContactInfo.Street, Valid: true}
+	cI.Zip = pgtype.Text{String: r.ContactInfo.Zip, Valid: true}
 
 	return nil
 }
@@ -82,20 +94,25 @@ func (r *createClientRequest) bind(c *fiber.Ctx, cl *db.Client, v *Validator) er
 
 type updateUserRequest struct {
 	User struct {
-		Fname         string      `json:"fname"`
-		Lname         string      `json:"lname"`
-		Phone         string      `json:"phone"`
-		NameForHeader string      `json:"nameForHeader"`
-		Street        string      `json:"street"`
-		City          string      `json:"city"`
-		Zip           string      `json:"zip"`
-		State         string      `json:"state"`
-		License       string      `json:"license"`
-		PyamentInfo   PaymentInfo `json:"paymentInfo"`
-	}
+		Fname    string `json:"fname" validate:"required"`
+		Lname    string `json:"lname" validate:"required"`
+		License	 string `json:"license" validate:"required"`
+		Nameforheader string `json:"nameForHeader" validate:"required"`
+	} `json:"user"`
+	ContactInfo struct {
+		Phone string `json:"phone" validate:"required"`
+		City string `json:"city" validate:"required"`
+		State string `json:"state" validate:"required"`
+		Street string `json:"street" validate:"required"`
+		Zip string `json:"zip" validate:"required"`
+		PaymentInfo struct {
+			Venmo string `json:"venmo"`
+			Paypal string `json:"paypal"`
+		} `json:"paymentInfo"`
+	} `json:"contactInfo"`
 }
 
-func (r *updateUserRequest) bind(c *fiber.Ctx, u *db.User, v *Validator) error {
+func (r *updateUserRequest) bind(c *fiber.Ctx, u *db.User, cI *db.UserContactInfo, v *Validator) error {
 	// validate
 	if err := c.BodyParser(r); err != nil {
 		return err
@@ -104,27 +121,23 @@ func (r *updateUserRequest) bind(c *fiber.Ctx, u *db.User, v *Validator) error {
 	if err := v.Validate(r); err != nil {
 		return err
 	}
-
-	// marshall payment info
-	piBytes, err := json.Marshal(r.User.PyamentInfo)
-
+	// bind user
+	u.Fname = r.User.Fname
+	u.Lname = r.User.Lname
+	u.Nameforheader = r.User.Nameforheader
+	u.License = pgtype.Text{String: r.User.License, Valid: true}
+	// bind contact info
+	cI.Phone = pgtype.Text{String: r.ContactInfo.Phone, Valid: true}
+	cI.City = pgtype.Text{String: r.ContactInfo.City, Valid: true}
+	cI.State = pgtype.Text{String: r.ContactInfo.State, Valid: true}
+	cI.Street = pgtype.Text{String: r.ContactInfo.Street, Valid: true}
+	cI.Zip = pgtype.Text{String: r.ContactInfo.Zip, Valid: true}
+	paymentInfo, err := json.Marshal(r.ContactInfo.PaymentInfo)
 	if err != nil {
 		return err
 	}
+	cI.Paymentinfo = paymentInfo
 
-	u.Fname = r.User.Fname
-	u.Lname = r.User.Lname
-	u.Phone = pgtype.Text{String: r.User.Phone, Valid: true}
-	u.Nameforheader = r.User.NameForHeader
-	u.Street = pgtype.Text{String: r.User.Street, Valid: true}
-	u.City = pgtype.Text{String: r.User.City, Valid: true}
-	u.Zip = pgtype.Text{String: r.User.Zip, Valid: true}
-	u.State = pgtype.Text{String: r.User.State, Valid: true}
-	u.License = pgtype.Text{String: r.User.License, Valid: true}
-	u.Paymentinfo = piBytes
-	// need to improve typing on this
-
-	// u.Paymentinfo = r.User.Paymentinfo
 
 	return nil
 }

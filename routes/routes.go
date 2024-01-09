@@ -15,9 +15,10 @@ func LoadRoutes(a *fiber.App, h *handlers.Handler) {
 
 	userRoutes.Post("/", h.CreateUserHandler)
 	userRoutes.Post("/login", h.LoginUserHandler)
-	userRoutes.Get("/", h.GetUserHandler)
+	userRoutes.Get("/", middleware.AuthJwt, h.GetUserHandler)
+	userRoutes.Get("/contact-info", middleware.AuthJwt, h.GetUserContactInfo)
 	userRoutes.Put("/", middleware.AuthJwt, h.UpdateUserHandler)
-	userRoutes.Delete("/", h.DeleteUserHandler)
+	userRoutes.Delete("/", middleware.AuthJwt, h.DeleteUserHandler)
 
 	// userRoutes.Post("/login", h.LoginUserHandler)
 
