@@ -31,6 +31,8 @@ func LoadRoutes(a *fiber.App, h *handlers.Handler) {
 	// clientRoutes.Put("/:id", )
 
 	// event routes
+  eventRoutes := a.Group("/event")
+  eventRoutes.Post("/", h.CreateEventHandler)
 
 	// artist routes
 	// artistRoutes := a.Group("/artists")
