@@ -33,18 +33,18 @@ func (h *Handler) CreateUserHandler(c *fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(err.Error())
 	}
 
-	newUser, err := h.queries.CreateUser(c.Context(), db.CreateUserParams{ 
-		Hash: hash, 
-		Email: user.Email,
-		Fname: user.Fname,
-		Lname: user.Lname,
+	newUser, err := h.queries.CreateUser(c.Context(), db.CreateUserParams{
+		Hash:          hash,
+		Email:         user.Email,
+		Fname:         user.Fname,
+		Lname:         user.Lname,
 		Nameforheader: user.Nameforheader,
-		Phone: user.Phone,
-		Street: user.Street,
-		City: user.City,
-		State: user.State,
-		Zip: user.Zip,
-		ID: uuid.New(),
+		Phone:         user.Phone,
+		Street:        user.Street,
+		City:          user.City,
+		State:         user.State,
+		Zip:           user.Zip,
+		ID:            uuid.New(),
 	})
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(err.Error())
@@ -72,17 +72,17 @@ func (h *Handler) UpdateUserHandler(c *fiber.Ctx) error {
 	}
 
 	updatedUser, err := h.queries.UpdateUser(c.Context(), db.UpdateUserParams{
-		Fname: user.Fname,
-		Lname: user.Lname,
-		Phone: user.Phone,
+		Fname:         user.Fname,
+		Lname:         user.Lname,
+		Phone:         user.Phone,
 		Nameforheader: user.Nameforheader,
-		Street: user.Street,
-		City: user.City,
-		Zip: user.Zip,
-		State: user.State,
-		License: user.License,
-		Paymentinfo: user.Paymentinfo,
-		ID: userId,
+		Street:        user.Street,
+		City:          user.City,
+		Zip:           user.Zip,
+		State:         user.State,
+		License:       user.License,
+		Paymentinfo:   user.Paymentinfo,
+		ID:            userId,
 	})
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(err.Error())
@@ -107,7 +107,7 @@ func (h *Handler) DeleteUserHandler(c *fiber.Ctx) error {
 }
 
 func (h *Handler) LoginUserHandler(c *fiber.Ctx) error {
-	
+
 	req := loginUserRequest{}
 
 	if err := req.bind(c, h.validator); err != nil {
@@ -121,7 +121,7 @@ func (h *Handler) LoginUserHandler(c *fiber.Ctx) error {
 
 	match := user.CheckPassword(req.Password)
 
-	if (match) {
+	if match {
 		payload := utils.JwtPayload{Id: user.ID.String(), Email: user.Email}
 		jwt, err := utils.GenerateJWT(payload)
 		if err != nil {
@@ -129,8 +129,8 @@ func (h *Handler) LoginUserHandler(c *fiber.Ctx) error {
 			return c.Status(http.StatusInternalServerError).JSON(err.Error())
 		}
 		c.Cookie(&fiber.Cookie{
-			Name: "willow-access-token",
-			Expires: time.Now().Add((time.Hour * 72)),
+			Name:     "willow-access-token",
+			Expires:  time.Now().Add((time.Hour * 72)),
 			HTTPOnly: false,
 			Secure:   false,
 			SameSite: "lax",
