@@ -33,7 +33,13 @@ func LoadRoutes(a *fiber.App, h *handlers.Handler) {
 
 	// event routes
 	eventRoutes := a.Group("/event")
-	eventRoutes.Post("/", h.CreateEventHandler)
+	eventRoutes.Post("/", middleware.AuthJwt, h.CreateEventHandler)
+	eventRoutes.Get("/", middleware.AuthJwt, h.GetEventHandler)
+	eventRoutes.Put("/", middleware.AuthJwt, h.UpdateEventHandler)
+	eventRoutes.Delete("/", middleware.AuthJwt, h.DeleteEventHandler)
+
+	eventsRoutes := a.Group("/events")
+	eventsRoutes.Get("/", middleware.AuthJwt, h.GetEventsByClientHandler)
 
 	// artist routes
 	// artistRoutes := a.Group("/artists")

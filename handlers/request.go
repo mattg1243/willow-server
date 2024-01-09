@@ -26,11 +26,11 @@ type createUserRequest struct {
 		Lname    string `json:"lname" validate:"required"`
 	} `json:"user"`
 	ContactInfo struct {
-		Phone string `json:"phone"`
-		City string `json:"city"`
-		State string `json:"state"`
+		Phone  string `json:"phone"`
+		City   string `json:"city"`
+		State  string `json:"state"`
 		Street string `json:"street"`
-		Zip string `json:"zip"`
+		Zip    string `json:"zip"`
 	} `json:"contactInfo"`
 }
 
@@ -97,19 +97,19 @@ func (r *createClientRequest) bind(c *fiber.Ctx, cl *db.Client, v *Validator) er
 
 type updateUserRequest struct {
 	User struct {
-		Fname    string `json:"fname" validate:"required"`
-		Lname    string `json:"lname" validate:"required"`
-		License	 string `json:"license" validate:"required"`
+		Fname         string `json:"fname" validate:"required"`
+		Lname         string `json:"lname" validate:"required"`
+		License       string `json:"license" validate:"required"`
 		Nameforheader string `json:"nameForHeader" validate:"required"`
 	} `json:"user"`
 	ContactInfo struct {
-		Phone string `json:"phone" validate:"required"`
-		City string `json:"city" validate:"required"`
-		State string `json:"state" validate:"required"`
-		Street string `json:"street" validate:"required"`
-		Zip string `json:"zip" validate:"required"`
+		Phone       string `json:"phone" validate:"required"`
+		City        string `json:"city" validate:"required"`
+		State       string `json:"state" validate:"required"`
+		Street      string `json:"street" validate:"required"`
+		Zip         string `json:"zip" validate:"required"`
 		PaymentInfo struct {
-			Venmo string `json:"venmo"`
+			Venmo  string `json:"venmo"`
 			Paypal string `json:"paypal"`
 		} `json:"paymentInfo"`
 	} `json:"contactInfo"`
@@ -140,7 +140,6 @@ func (r *updateUserRequest) bind(c *fiber.Ctx, u *db.User, cI *db.UserContactInf
 		return err
 	}
 	cI.Paymentinfo = paymentInfo
-
 
 	return nil
 }
@@ -238,6 +237,19 @@ func Float64ToPgNumeric(f float64) pgtype.Numeric {
 	return n
 }
 
+func StringToPgTimestamp(s string) (pgtype.Timestamp, error) {
+	var t pgtype.Timestamp
+	timeLayout := "2006-01-02 15:04:05"
+	timeStr, err := time.Parse(timeLayout, s)
+	if err != nil {
+		log.Error("error parsing time: ", err)
+		return t, err
+	}
+	t.Time = timeStr
+	t.Valid = true
+	return t, nil
+}
+
 func (r *createEventRequest) bind(c *fiber.Ctx, e *db.Event, v *Validator) error {
 	log.Info("binding req for: event")
 	// validate
@@ -249,22 +261,65 @@ func (r *createEventRequest) bind(c *fiber.Ctx, e *db.Event, v *Validator) error
 		return err
 	}
 
-	timeLayout := "2006-01-02 15:04:05"
-	timeStr, err := time.Parse(timeLayout, r.Event.Date)
+	date, err := StringToPgTimestamp(r.Event.Date)
 	if err != nil {
-		log.Error("error parsing time: ", err)
-		return err
+		log.Fatal("error parsing date: ", err)
 	}
 
-	e.Date = pgtype.Timestamp{Time: timeStr, Valid: true}
+	e.Date = date
 	e.Duration = Float64ToPgNumeric(r.Event.Duration)
-	e.Type = pgtype.Text{String: r.Event.Type}
-	e.Detail = pgtype.Text{String: r.Event.Detail}
+	e.Type = pgtype.Text{String: r.Event.Type, Valid: true}
+	e.Detail = pgtype.Text{String: r.Event.Detail, Valid: true}
 	e.Rate = r.Event.Rate
 	e.Amount = Float64ToPgNumeric(r.Event.Amount)
 	e.ClientID = r.Event.ClientID
 	log.Info("ClientID: ", e.ClientID)
 	e.Newbalance = Float64ToPgNumeric(r.Event.Newbalance)
+
+	return nil
+}
+
+type updateEventRequest struct {
+	Event struct {
+		ID         uuid.UUID `json:"id"`
+		ClientID   uuid.UUID `json:"clientId"`
+		Date       string    `json:"date"`
+		Duration   float64   `json:"duration"`
+		Type       string    `json:"type"`
+		Detail     string    `json:"detail"`
+		Rate       int32     `json:"rate"`
+		Amount     float64   `json:"amount"`
+		Newbalance float64   `json:"newbalance"`
+	} `json:"event"`
+}
+
+func (r *updateEventRequest) bind(c *fiber.Ctx, event *db.Event, v *Validator) error {
+
+	if err := c.BodyParser(r); err != nil {
+		return err
+	}
+
+	if err := v.Validate(r); err != nil {
+		return err
+	}
+
+	log.Info("event.date: ", r.Event.Date)
+	date, err := StringToPgTimestamp(r.Event.Date)
+
+	if err != nil {
+		log.Fatal("error parsing date: ", err)
+		return err
+	}
+
+	event.ID = r.Event.ID
+	event.ClientID = r.Event.ClientID
+	event.Date = date
+	event.Duration = Float64ToPgNumeric(r.Event.Duration)
+	event.Type = pgtype.Text{String: r.Event.Type, Valid: true}
+	event.Detail = pgtype.Text{String: r.Event.Detail, Valid: true}
+	event.Rate = r.Event.Rate
+	event.Amount = Float64ToPgNumeric(r.Event.Amount)
+	event.Newbalance = Float64ToPgNumeric(r.Event.Newbalance)
 
 	return nil
 }

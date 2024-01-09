@@ -55,25 +55,25 @@ func (h *Handler) CreateUserHandler(c *fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON(err.Error())
 	}
 	// save user
-	newUser, err := h.queries.CreateUser(c.Context(), db.CreateUserParams{ 
-		Hash: hash, 
-		Email: user.Email,
-		Fname: user.Fname,
-		Lname: user.Lname,
+	newUser, err := h.queries.CreateUser(c.Context(), db.CreateUserParams{
+		Hash:          hash,
+		Email:         user.Email,
+		Fname:         user.Fname,
+		Lname:         user.Lname,
 		Nameforheader: user.Nameforheader,
-		ID: uuid.New(),
+		ID:            uuid.New(),
 	})
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(err.Error())
 	}
 	// save contact info
 	_, err = h.queries.CreateUserContactInfo(c.Context(), db.CreateUserContactInfoParams{
-		ID: uuid.New(),
-		Phone: contactInfo.Phone,
-		City: contactInfo.City,
-		State: contactInfo.State,
+		ID:     uuid.New(),
+		Phone:  contactInfo.Phone,
+		City:   contactInfo.City,
+		State:  contactInfo.State,
 		Street: contactInfo.Street,
-		Zip: contactInfo.Zip,
+		Zip:    contactInfo.Zip,
 		UserID: newUser.ID,
 	})
 	if err != nil {
@@ -100,23 +100,23 @@ func (h *Handler) UpdateUserHandler(c *fiber.Ctx) error {
 	}
 	// save user
 	updatedUser, err := h.queries.UpdateUser(c.Context(), db.UpdateUserParams{
-		Fname: user.Fname,
-		Lname: user.Lname,
+		Fname:         user.Fname,
+		Lname:         user.Lname,
 		Nameforheader: user.Nameforheader,
-		License: user.License,
-		ID: userId,
+		License:       user.License,
+		ID:            userId,
 	})
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(err.Error())
 	}
 	// save contact info
 	_, err = h.queries.UpdateUserContactInfo(c.Context(), db.UpdateUserContactInfoParams{
-		UserID: userId,
-		Phone: contactInfo.Phone,
-		City: contactInfo.City,
-		State: contactInfo.State,
-		Street: contactInfo.Street,
-		Zip: contactInfo.Zip,
+		UserID:      userId,
+		Phone:       contactInfo.Phone,
+		City:        contactInfo.City,
+		State:       contactInfo.State,
+		Street:      contactInfo.Street,
+		Zip:         contactInfo.Zip,
 		Paymentinfo: contactInfo.Paymentinfo,
 	})
 	if err != nil {
