@@ -105,3 +105,18 @@ func (h *Handler) UpdateClientHandler(c *fiber.Ctx) error {
 
 	return c.Status(http.StatusOK).JSON(updatedClient)
 }
+
+func (h *Handler) DeleteClientHandler(c *fiber.Ctx) error {
+	clientIDStr := c.Queries()["id"]
+	clientID, err := uuid.Parse(clientIDStr)
+	if err != nil {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	err = h.queries.DeleteClient(c.Context(), clientID)
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(err.Error())
+	}
+
+	return c.SendStatus(200)
+}
