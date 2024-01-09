@@ -1,12 +1,33 @@
 -- name: CreateUser :one
 INSERT INTO users (
-    fname, lname, email, "hash", city, nameforheader, phone, "state", street, zip, license, paymentinfo, id, created_at, updated_at
+    id, fname, lname, email, "hash", nameforheader, license,  created_at, updated_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW()
-) RETURNING *;
+    $1, $2, $3, $4, $5, $6, $7, NOW(), NOW()
+) RETURNING
+    id, 
+    fname, 
+    lname, 
+    email, 
+    nameforheader, 
+    license, 
+    created_at, 
+    updated_at;
 
 -- name: GetUser :one
-SELECT * FROM users
+SELECT 
+    id, 
+    fname, 
+    lname, 
+    email, 
+    nameforheader, 
+    license, 
+    created_at, 
+    updated_at 
+FROM users
+WHERE id = $1;
+
+-- name: GetUserHash :one
+SELECT "hash" FROM users
 WHERE id = $1;
 
 -- name: GetUserByEmail :one
@@ -18,17 +39,11 @@ UPDATE users
 SET
     fname = $1,
     lname = $2,
-    city = $3,
-    nameForHeader = $4,
-    phone = $5,
-    "state" = $6,
-    street = $7,
-    zip = $8,
-    license = $9,
-    paymentInfo = $10,
+    nameForHeader = $3,
+    license = $4,
     updated_at = NOW()
 WHERE
-    id = $11
+    id = $5
 RETURNING *;
 
 -- name: DeleteUser :exec

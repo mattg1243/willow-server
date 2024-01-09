@@ -4,13 +4,21 @@ create table users (
 	lname varchar (50) not null,
 	email varchar (255) unique not null,
 	"hash" varchar (255) not null,
-	city varchar (255),
 	nameForHeader varchar (255) not null, 
-	phone varchar (255),
+	license varchar (255),
+	created_at timestamp not null,
+	updated_at timestamp
+);
+
+create table user_contact_info (
+	id uuid primary key not null,
+	user_id uuid not null,
+	foreign key (user_id) references users (id) on delete cascade,
+	phone varchar(255),
+	city varchar (255),
 	"state" varchar (255),
 	street varchar (255),
 	zip varchar (255),
-	license varchar (255),
 	paymentInfo json,
 	created_at timestamp not null,
 	updated_at timestamp

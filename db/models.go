@@ -42,14 +42,21 @@ type User struct {
 	Lname         string           `json:"lname"`
 	Email         string           `json:"email"`
 	Hash          string           `json:"hash"`
-	City          pgtype.Text      `json:"city"`
 	Nameforheader string           `json:"nameforheader"`
-	Phone         pgtype.Text      `json:"phone"`
-	State         pgtype.Text      `json:"state"`
-	Street        pgtype.Text      `json:"street"`
-	Zip           pgtype.Text      `json:"zip"`
 	License       pgtype.Text      `json:"license"`
-	Paymentinfo   []byte           `json:"paymentinfo"`
 	CreatedAt     pgtype.Timestamp `json:"created_at"`
 	UpdatedAt     pgtype.Timestamp `json:"updated_at"`
+}
+
+type UserContactInfo struct {
+	ID          uuid.UUID        `json:"id"`
+	UserID      uuid.UUID        `json:"user_id"`
+	Phone       pgtype.Text      `json:"phone"`
+	City        pgtype.Text      `json:"city"`
+	State       pgtype.Text      `json:"state"`
+	Street      pgtype.Text      `json:"street"`
+	Zip         pgtype.Text      `json:"zip"`
+	Paymentinfo []byte           `json:"paymentinfo"`
+	CreatedAt   pgtype.Timestamp `json:"created_at"`
+	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
 }

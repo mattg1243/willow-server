@@ -14,59 +14,59 @@ import (
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
-    fname, lname, email, "hash", city, nameforheader, phone, "state", street, zip, license, paymentinfo, id, created_at, updated_at
+    id, fname, lname, email, "hash", nameforheader, license,  created_at, updated_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW(), NOW()
-) RETURNING id, fname, lname, email, hash, city, nameforheader, phone, state, street, zip, license, paymentinfo, created_at, updated_at
+    $1, $2, $3, $4, $5, $6, $7, NOW(), NOW()
+) RETURNING
+    id, 
+    fname, 
+    lname, 
+    email, 
+    nameforheader, 
+    license, 
+    created_at, 
+    updated_at
 `
 
 type CreateUserParams struct {
+	ID            uuid.UUID   `json:"id"`
 	Fname         string      `json:"fname"`
 	Lname         string      `json:"lname"`
 	Email         string      `json:"email"`
 	Hash          string      `json:"hash"`
-	City          pgtype.Text `json:"city"`
 	Nameforheader string      `json:"nameforheader"`
-	Phone         pgtype.Text `json:"phone"`
-	State         pgtype.Text `json:"state"`
-	Street        pgtype.Text `json:"street"`
-	Zip           pgtype.Text `json:"zip"`
 	License       pgtype.Text `json:"license"`
-	Paymentinfo   []byte      `json:"paymentinfo"`
-	ID            uuid.UUID   `json:"id"`
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+type CreateUserRow struct {
+	ID            uuid.UUID        `json:"id"`
+	Fname         string           `json:"fname"`
+	Lname         string           `json:"lname"`
+	Email         string           `json:"email"`
+	Nameforheader string           `json:"nameforheader"`
+	License       pgtype.Text      `json:"license"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
+	UpdatedAt     pgtype.Timestamp `json:"updated_at"`
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error) {
 	row := q.db.QueryRow(ctx, createUser,
+		arg.ID,
 		arg.Fname,
 		arg.Lname,
 		arg.Email,
 		arg.Hash,
-		arg.City,
 		arg.Nameforheader,
-		arg.Phone,
-		arg.State,
-		arg.Street,
-		arg.Zip,
 		arg.License,
-		arg.Paymentinfo,
-		arg.ID,
 	)
-	var i User
+	var i CreateUserRow
 	err := row.Scan(
 		&i.ID,
 		&i.Fname,
 		&i.Lname,
 		&i.Email,
-		&i.Hash,
-		&i.City,
 		&i.Nameforheader,
-		&i.Phone,
-		&i.State,
-		&i.Street,
-		&i.Zip,
 		&i.License,
-		&i.Paymentinfo,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -84,27 +84,40 @@ func (q *Queries) DeleteUser(ctx context.Context, id uuid.UUID) error {
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, fname, lname, email, hash, city, nameforheader, phone, state, street, zip, license, paymentinfo, created_at, updated_at FROM users
+SELECT 
+    id, 
+    fname, 
+    lname, 
+    email, 
+    nameforheader, 
+    license, 
+    created_at, 
+    updated_at 
+FROM users
 WHERE id = $1
 `
 
-func (q *Queries) GetUser(ctx context.Context, id uuid.UUID) (User, error) {
+type GetUserRow struct {
+	ID            uuid.UUID        `json:"id"`
+	Fname         string           `json:"fname"`
+	Lname         string           `json:"lname"`
+	Email         string           `json:"email"`
+	Nameforheader string           `json:"nameforheader"`
+	License       pgtype.Text      `json:"license"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
+	UpdatedAt     pgtype.Timestamp `json:"updated_at"`
+}
+
+func (q *Queries) GetUser(ctx context.Context, id uuid.UUID) (GetUserRow, error) {
 	row := q.db.QueryRow(ctx, getUser, id)
-	var i User
+	var i GetUserRow
 	err := row.Scan(
 		&i.ID,
 		&i.Fname,
 		&i.Lname,
 		&i.Email,
-		&i.Hash,
-		&i.City,
 		&i.Nameforheader,
-		&i.Phone,
-		&i.State,
-		&i.Street,
-		&i.Zip,
 		&i.License,
-		&i.Paymentinfo,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -112,7 +125,7 @@ func (q *Queries) GetUser(ctx context.Context, id uuid.UUID) (User, error) {
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, fname, lname, email, hash, city, nameforheader, phone, state, street, zip, license, paymentinfo, created_at, updated_at FROM users
+SELECT id, fname, lname, email, hash, nameforheader, license, created_at, updated_at FROM users
 WHERE email = $1
 `
 
@@ -125,18 +138,24 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Lname,
 		&i.Email,
 		&i.Hash,
-		&i.City,
 		&i.Nameforheader,
-		&i.Phone,
-		&i.State,
-		&i.Street,
-		&i.Zip,
 		&i.License,
-		&i.Paymentinfo,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const getUserHash = `-- name: GetUserHash :one
+SELECT "hash" FROM users
+WHERE id = $1
+`
+
+func (q *Queries) GetUserHash(ctx context.Context, id uuid.UUID) (string, error) {
+	row := q.db.QueryRow(ctx, getUserHash, id)
+	var hash string
+	err := row.Scan(&hash)
+	return hash, err
 }
 
 const updateUser = `-- name: UpdateUser :one
@@ -144,31 +163,19 @@ UPDATE users
 SET
     fname = $1,
     lname = $2,
-    city = $3,
-    nameForHeader = $4,
-    phone = $5,
-    "state" = $6,
-    street = $7,
-    zip = $8,
-    license = $9,
-    paymentInfo = $10,
+    nameForHeader = $3,
+    license = $4,
     updated_at = NOW()
 WHERE
-    id = $11
-RETURNING id, fname, lname, email, hash, city, nameforheader, phone, state, street, zip, license, paymentinfo, created_at, updated_at
+    id = $5
+RETURNING id, fname, lname, email, hash, nameforheader, license, created_at, updated_at
 `
 
 type UpdateUserParams struct {
 	Fname         string      `json:"fname"`
 	Lname         string      `json:"lname"`
-	City          pgtype.Text `json:"city"`
 	Nameforheader string      `json:"nameforheader"`
-	Phone         pgtype.Text `json:"phone"`
-	State         pgtype.Text `json:"state"`
-	Street        pgtype.Text `json:"street"`
-	Zip           pgtype.Text `json:"zip"`
 	License       pgtype.Text `json:"license"`
-	Paymentinfo   []byte      `json:"paymentinfo"`
 	ID            uuid.UUID   `json:"id"`
 }
 
@@ -176,14 +183,8 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 	row := q.db.QueryRow(ctx, updateUser,
 		arg.Fname,
 		arg.Lname,
-		arg.City,
 		arg.Nameforheader,
-		arg.Phone,
-		arg.State,
-		arg.Street,
-		arg.Zip,
 		arg.License,
-		arg.Paymentinfo,
 		arg.ID,
 	)
 	var i User
@@ -193,14 +194,8 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.Lname,
 		&i.Email,
 		&i.Hash,
-		&i.City,
 		&i.Nameforheader,
-		&i.Phone,
-		&i.State,
-		&i.Street,
-		&i.Zip,
 		&i.License,
-		&i.Paymentinfo,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
