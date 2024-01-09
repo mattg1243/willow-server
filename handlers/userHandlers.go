@@ -142,7 +142,7 @@ func (h *Handler) DeleteUserHandler(c *fiber.Ctx) error {
 }
 
 func (h *Handler) LoginUserHandler(c *fiber.Ctx) error {
-	
+
 	req := loginUserRequest{}
 
 	if err := req.bind(c, h.validator); err != nil {
@@ -156,7 +156,7 @@ func (h *Handler) LoginUserHandler(c *fiber.Ctx) error {
 
 	match := user.CheckPassword(req.Password)
 
-	if (match) {
+	if match {
 		payload := utils.JwtPayload{Id: user.ID.String(), Email: user.Email}
 		jwt, err := utils.GenerateJWT(payload)
 		if err != nil {
@@ -164,8 +164,8 @@ func (h *Handler) LoginUserHandler(c *fiber.Ctx) error {
 			return c.Status(http.StatusInternalServerError).JSON(err.Error())
 		}
 		c.Cookie(&fiber.Cookie{
-			Name: "willow-access-token",
-			Expires: time.Now().Add((time.Hour * 72)),
+			Name:     "willow-access-token",
+			Expires:  time.Now().Add((time.Hour * 72)),
 			HTTPOnly: false,
 			Secure:   false,
 			SameSite: "lax",

@@ -14,28 +14,27 @@ type JwtPayload struct {
 	jwt.StandardClaims
 }
 
-
 var secretString = os.Getenv("JWT_SECRET")
 
 func GenerateJWT(p JwtPayload) (string, error) {
-	
+
 	secretKey := []byte(secretString)
 	claims := &jwt.MapClaims{
-			"id": p.Id,
-			"email": p.Email,
+		"id":    p.Id,
+		"email": p.Email,
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	
-	return token.SignedString(secretKey);
+
+	return token.SignedString(secretKey)
 }
 
-func ValidateJWT (tokenString string) (*JwtPayload, error) {
+func ValidateJWT(tokenString string) (*JwtPayload, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &JwtPayload{}, func(t *jwt.Token) (interface{}, error) {
 		return []byte(secretString), nil
 	})
 	fmt.Print(token)
 	if err != nil {
-		fmt.Printf("error: %v", err.Error());
+		fmt.Printf("error: %v", err.Error())
 		return &JwtPayload{}, err
 	}
 
