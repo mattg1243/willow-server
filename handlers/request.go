@@ -1,13 +1,13 @@
 package handlers
 
 import (
+  "fmt"
 	"encoding/json"
-
 	"time"
 
-  "github.com/google/uuid"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mattg1243/sqlc-fiber/db"
 )
@@ -53,12 +53,12 @@ func (r *createUserRequest) bind(c *fiber.Ctx, u *db.User, v *Validator) error {
 // client requests
 type createClientRequest struct {
 	Client struct {
-		Fname string `json:"fname" validate:"required"`
-		Lname string `json:"lname"`
-		Email string `json:"email"`
-		Rate  int16  `json:"rate" validate:"required"`
-		Phone string `json:"phone"`
-		Balancenotifythreshold int16 `json:"balanceNotifyThreshold"`
+		Fname                  string `json:"fname" validate:"required"`
+		Lname                  string `json:"lname"`
+		Email                  string `json:"email"`
+		Rate                   int16  `json:"rate" validate:"required"`
+		Phone                  string `json:"phone"`
+		Balancenotifythreshold int16  `json:"balanceNotifyThreshold"`
 	} `json:"client"`
 }
 
@@ -132,7 +132,7 @@ func (r *updateUserRequest) bind(c *fiber.Ctx, u *db.User, v *Validator) error {
 }
 
 type loginUserRequest struct {
-	Email string `json:"email" validate:"required,email"`
+	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required"`
 }
 
@@ -216,8 +216,16 @@ type createEventRequest struct {
 	} `json:"event"`
 }
 
+func Float64ToPgNumeric(f float64) pgtype.Numeric {
+  var n pgtype.Numeric
+  if err := n.Scan(fmt.Sprintf("%f", f)); err != nil {
+    log.Error("error scanning float64 to pg numeric: ", err)
+  }
+  return n
+}
+
 func (r *createEventRequest) bind(c *fiber.Ctx, e *db.Event, v *Validator) error {
-  log.Info("binding req for: event")
+	log.Info("binding req for: event")
 	// validate
 	if err := c.BodyParser(r); err != nil {
 		return err
@@ -227,40 +235,21 @@ func (r *createEventRequest) bind(c *fiber.Ctx, e *db.Event, v *Validator) error
 		return err
 	}
 
-  timeLayout := "2006-01-02 15:04:05 -0700 MST"
-  timeStr, err := time.Parse(timeLayout, r.Event.Date.String())
-  if err != nil {
-    log.Error("error parsing time: ", err)
-    return err
-  }
+	timeLayout := "2006-01-02 15:04:05 -0700 MST"
+	timeStr, err := time.Parse(timeLayout, r.Event.Date.String())
+	if err != nil {
+		log.Error("error parsing time: ", err)
+		return err
+	}
 
-  e.Date = pgtype.Timestamp{Time: timeStr}
-  log.Info("event date: ", e.Date)
-
-  var dur pgtype.Numeric
-  if err := dur.Scan(r.Event.Duration); err != nil {
-    log.Error("error scanning duration: ", err)
-    log.Error("got value: ", r.Event.Duration)
-    return err
-  }
-  e.Duration = dur
-  e.Type = pgtype.Text{String: r.Event.Type}
-  e.Detail = pgtype.Text{String: r.Event.Detail}
-  e.Rate  = r.Event.Rate
-
-  var am pgtype.Numeric
-  if err := am.Scan(r.Event.Amount); err != nil {
-    return err
-  }
-  e.Amount = am
-  e.ClientID = r.Event.ClientID
-
-  var nb pgtype.Numeric
-  if err := nb.Scan(r.Event.Newbalance); err != nil {
-    return err
-  }
-  e.Newbalance = nb
+	e.Date = pgtype.Timestamp{Time: timeStr}
+	e.Duration = Float64ToPgNumeric(r.Event.Duration)
+	e.Type = pgtype.Text{String: r.Event.Type}
+	e.Detail = pgtype.Text{String: r.Event.Detail}
+	e.Rate = r.Event.Rate
+  e.Amount = Float64ToPgNumeric(r.Event.Amount)
+	e.ClientID = r.Event.ClientID
+  e.Newbalance = Float64ToPgNumeric(r.Event.Newbalance)
 
 	return nil
 }
-

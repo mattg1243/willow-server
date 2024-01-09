@@ -28,11 +28,11 @@ func (h *Handler) CreateClientHandler(c *fiber.Ctx) error {
 		return c.Status(http.StatusInternalServerError).JSON("UUID conversion error")
 	}
 	newClient, err := h.queries.CreateClient(c.Context(), db.CreateClientParams{
-		UserID: userID, 
-		Fname: client.Fname,
-		Lname: client.Lname,
-		Email: client.Email,
-		ID: uuid.New(),
+		UserID: userID,
+		Fname:  client.Fname,
+		Lname:  client.Lname,
+		Email:  client.Email,
+		ID:     uuid.New(),
 	})
 
 	if err != nil {
@@ -48,7 +48,7 @@ func (h *Handler) GetClientHandler(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON("UUID conversion error")
 	}
-	
+
 	clientIDStr := c.Queries()["id"]
 	if clientIDStr == "" {
 		clients, err := h.queries.GetClients(c.Context(), userID)

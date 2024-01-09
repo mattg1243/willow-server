@@ -8,7 +8,7 @@ import (
 )
 
 type PaymentInfo struct {
-	Venmo string `json:"venmo"`
+	Venmo  string `json:"venmo"`
 	PayPal string `json:"paypal"`
 }
 
