@@ -1,8 +1,8 @@
 -- name: CreateEvent :one
 INSERT INTO events (
-    date, duration, type, detail, rate, amount, newbalance
+    client_id, date, duration, type, detail, rate, amount, newbalance
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
+    $1, $2, $3, $4, $5, $6, $7, $8
 ) RETURNING *;
 
 -- name: GetEvent :one

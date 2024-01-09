@@ -16,6 +16,7 @@ func (h *Handler) CreateEventHandler(c *fiber.Ctx) error {
 	}
 
 	newEvent, err := h.queries.CreateEvent(c.Context(), db.CreateEventParams{
+		ClientID:   event.ClientID,
 		Date:       event.Date,
 		Duration:   event.Duration,
 		Type:       event.Type,

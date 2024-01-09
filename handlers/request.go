@@ -1,8 +1,8 @@
 package handlers
 
 import (
-  "fmt"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -205,8 +205,8 @@ func (r *updateClientRequest) bind(c *fiber.Ctx, cl *db.Client, v *Validator) er
 // event requests
 type createEventRequest struct {
 	Event struct {
-		ClientID   uuid.UUID `json:"client_id"`
-		Date       time.Time `json:"date"`
+		ClientID   uuid.UUID `json:"clientId"`
+		Date       string    `json:"date"`
 		Duration   float64   `json:"duration"`
 		Type       string    `json:"type"`
 		Detail     string    `json:"detail"`
@@ -217,11 +217,11 @@ type createEventRequest struct {
 }
 
 func Float64ToPgNumeric(f float64) pgtype.Numeric {
-  var n pgtype.Numeric
-  if err := n.Scan(fmt.Sprintf("%f", f)); err != nil {
-    log.Error("error scanning float64 to pg numeric: ", err)
-  }
-  return n
+	var n pgtype.Numeric
+	if err := n.Scan(fmt.Sprintf("%f", f)); err != nil {
+		log.Error("error scanning float64 to pg numeric: ", err)
+	}
+	return n
 }
 
 func (r *createEventRequest) bind(c *fiber.Ctx, e *db.Event, v *Validator) error {
@@ -235,21 +235,22 @@ func (r *createEventRequest) bind(c *fiber.Ctx, e *db.Event, v *Validator) error
 		return err
 	}
 
-	timeLayout := "2006-01-02 15:04:05 -0700 MST"
-	timeStr, err := time.Parse(timeLayout, r.Event.Date.String())
+	timeLayout := "2006-01-02 15:04:05"
+	timeStr, err := time.Parse(timeLayout, r.Event.Date)
 	if err != nil {
 		log.Error("error parsing time: ", err)
 		return err
 	}
 
-	e.Date = pgtype.Timestamp{Time: timeStr}
+	e.Date = pgtype.Timestamp{Time: timeStr, Valid: true}
 	e.Duration = Float64ToPgNumeric(r.Event.Duration)
 	e.Type = pgtype.Text{String: r.Event.Type}
 	e.Detail = pgtype.Text{String: r.Event.Detail}
 	e.Rate = r.Event.Rate
-  e.Amount = Float64ToPgNumeric(r.Event.Amount)
+	e.Amount = Float64ToPgNumeric(r.Event.Amount)
 	e.ClientID = r.Event.ClientID
-  e.Newbalance = Float64ToPgNumeric(r.Event.Newbalance)
+	log.Info("ClientID: ", e.ClientID)
+	e.Newbalance = Float64ToPgNumeric(r.Event.Newbalance)
 
 	return nil
 }
