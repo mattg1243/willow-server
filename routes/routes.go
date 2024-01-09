@@ -29,7 +29,7 @@ func LoadRoutes(a *fiber.App, h *handlers.Handler) {
 	clientRoutes.Get("/", middleware.AuthJwt, h.GetClientHandler)
 	// TODO: test route, impl middleware hook
 	clientRoutes.Put("/", middleware.AuthJwt, h.UpdateClientHandler)
-	// clientRoutes.Put("/:id", )
+	clientRoutes.Delete("/", middleware.AuthJwt, h.DeleteClientHandler)
 
 	// event routes
 	eventRoutes := a.Group("/event")
