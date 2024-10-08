@@ -25,15 +25,25 @@ type Client struct {
 }
 
 type Event struct {
-	ID         uuid.UUID        `json:"id"`
-	ClientID   uuid.UUID        `json:"client_id"`
-	Date       pgtype.Timestamp `json:"date"`
-	Duration   pgtype.Numeric   `json:"duration"`
-	Type       pgtype.Text      `json:"type"`
-	Detail     pgtype.Text      `json:"detail"`
-	Rate       int32            `json:"rate"`
-	Amount     pgtype.Numeric   `json:"amount"`
-	Newbalance pgtype.Numeric   `json:"newbalance"`
+	ID          uuid.UUID        `json:"id"`
+	ClientID    uuid.UUID        `json:"client_id"`
+	Date        pgtype.Timestamp `json:"date"`
+	Duration    pgtype.Numeric   `json:"duration"`
+	EventTypeID uuid.UUID        `json:"event_type_id"`
+	Detail      pgtype.Text      `json:"detail"`
+	Rate        int32            `json:"rate"`
+	Amount      pgtype.Numeric   `json:"amount"`
+	Newbalance  pgtype.Numeric   `json:"newbalance"`
+}
+
+type EventType struct {
+	ID        uuid.UUID        `json:"id"`
+	UserID    uuid.UUID        `json:"user_id"`
+	Source    pgtype.Text      `json:"source"`
+	Name      string           `json:"name"`
+	Charge    bool             `json:"charge"`
+	CreatedAt pgtype.Timestamp `json:"created_at"`
+	UpdatedAt pgtype.Timestamp `json:"updated_at"`
 }
 
 type User struct {

@@ -5,14 +5,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/mattg1243/sqlc-fiber/db"
+	"github.com/mattg1243/willow-server/db"
 )
-
-type JwtClaims struct {
-	id    string
-	email string
-}
 
 func (h *Handler) CreateClientHandler(c *fiber.Ctx) error {
 	var client db.Client
@@ -32,6 +26,9 @@ func (h *Handler) CreateClientHandler(c *fiber.Ctx) error {
 		Fname:  client.Fname,
 		Lname:  client.Lname,
 		Email:  client.Email,
+		Phone: client.Phone,
+		Rate: client.Rate,
+		Balancenotifythreshold: client.Balancenotifythreshold,
 		ID:     uuid.New(),
 	})
 
@@ -77,21 +74,21 @@ func (h *Handler) UpdateClientHandler(c *fiber.Ctx) error {
 	}
 
 	var req updateClientRequest
-	var model db.Client
+	var client db.Client
 
-	if err := req.bind(c, &model, h.validator); err != nil {
+	if err := req.bind(c, &client, h.validator); err != nil {
 		return c.Status(http.StatusUnprocessableEntity).JSON(fiber.Map{"error": err.Error()})
 	}
 
 	err = h.queries.UpdateClient(c.Context(), db.UpdateClientParams{
 		ID:                     clientID,
-		Fname:                  req.Client.Fname,
-		Lname:                  pgtype.Text{String: req.Client.Lname},
-		Email:                  pgtype.Text{String: req.Client.Email},
-		Balance:                req.Client.Balance,
-		Balancenotifythreshold: req.Client.Balancenotifythreshold,
-		Rate:                   req.Client.Rate,
-		Isarchived:             pgtype.Bool{Bool: req.Client.Isarchived},
+		Fname:                  client.Fname,
+		Lname:                  client.Lname,
+		Email:                  client.Email,
+		Phone: 									client.Phone,
+		Balancenotifythreshold: client.Balancenotifythreshold,
+		Rate:                   client.Rate,
+		Isarchived:             client.Isarchived,
 	})
 
 	if err != nil {

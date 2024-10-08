@@ -14,21 +14,22 @@ import (
 
 const createEvent = `-- name: CreateEvent :one
 INSERT INTO events (
-    client_id, date, duration, type, detail, rate, amount, newbalance
+    client_id, date, duration, event_type_id, detail, rate, amount, newbalance, id
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8
-) RETURNING id, client_id, date, duration, type, detail, rate, amount, newbalance
+    $1, $2, $3, $4, $5, $6, $7, $8, $9
+) RETURNING id, client_id, date, duration, event_type_id, detail, rate, amount, newbalance
 `
 
 type CreateEventParams struct {
-	ClientID   uuid.UUID        `json:"client_id"`
-	Date       pgtype.Timestamp `json:"date"`
-	Duration   pgtype.Numeric   `json:"duration"`
-	Type       pgtype.Text      `json:"type"`
-	Detail     pgtype.Text      `json:"detail"`
-	Rate       int32            `json:"rate"`
-	Amount     pgtype.Numeric   `json:"amount"`
-	Newbalance pgtype.Numeric   `json:"newbalance"`
+	ClientID    uuid.UUID        `json:"client_id"`
+	Date        pgtype.Timestamp `json:"date"`
+	Duration    pgtype.Numeric   `json:"duration"`
+	EventTypeID uuid.UUID        `json:"event_type_id"`
+	Detail      pgtype.Text      `json:"detail"`
+	Rate        int32            `json:"rate"`
+	Amount      pgtype.Numeric   `json:"amount"`
+	Newbalance  pgtype.Numeric   `json:"newbalance"`
+	ID          uuid.UUID        `json:"id"`
 }
 
 func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (Event, error) {
@@ -36,11 +37,12 @@ func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (Event
 		arg.ClientID,
 		arg.Date,
 		arg.Duration,
-		arg.Type,
+		arg.EventTypeID,
 		arg.Detail,
 		arg.Rate,
 		arg.Amount,
 		arg.Newbalance,
+		arg.ID,
 	)
 	var i Event
 	err := row.Scan(
@@ -48,7 +50,7 @@ func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (Event
 		&i.ClientID,
 		&i.Date,
 		&i.Duration,
-		&i.Type,
+		&i.EventTypeID,
 		&i.Detail,
 		&i.Rate,
 		&i.Amount,
@@ -68,7 +70,7 @@ func (q *Queries) DeleteEvent(ctx context.Context, id uuid.UUID) error {
 }
 
 const getEvent = `-- name: GetEvent :one
-SELECT id, client_id, date, duration, type, detail, rate, amount, newbalance
+SELECT id, client_id, date, duration, event_type_id, detail, rate, amount, newbalance
 FROM events
 WHERE id = $1
 `
@@ -81,7 +83,7 @@ func (q *Queries) GetEvent(ctx context.Context, id uuid.UUID) (Event, error) {
 		&i.ClientID,
 		&i.Date,
 		&i.Duration,
-		&i.Type,
+		&i.EventTypeID,
 		&i.Detail,
 		&i.Rate,
 		&i.Amount,
@@ -91,7 +93,7 @@ func (q *Queries) GetEvent(ctx context.Context, id uuid.UUID) (Event, error) {
 }
 
 const getEvents = `-- name: GetEvents :many
-SELECT id, client_id, date, duration, type, detail, rate, amount, newbalance
+SELECT id, client_id, date, duration, event_type_id, detail, rate, amount, newbalance
 FROM events
 WHERE events.client_id = $1
 `
@@ -110,7 +112,7 @@ func (q *Queries) GetEvents(ctx context.Context, clientID uuid.UUID) ([]Event, e
 			&i.ClientID,
 			&i.Date,
 			&i.Duration,
-			&i.Type,
+			&i.EventTypeID,
 			&i.Detail,
 			&i.Rate,
 			&i.Amount,
@@ -131,7 +133,7 @@ UPDATE events
 SET
     date = $2,
     duration = $3,
-    type = $4,
+    event_type_id = $4,
     detail = $5,
     rate = $6,
     amount = $7,
@@ -141,14 +143,14 @@ WHERE
 `
 
 type UpdateEventParams struct {
-	ID         uuid.UUID        `json:"id"`
-	Date       pgtype.Timestamp `json:"date"`
-	Duration   pgtype.Numeric   `json:"duration"`
-	Type       pgtype.Text      `json:"type"`
-	Detail     pgtype.Text      `json:"detail"`
-	Rate       int32            `json:"rate"`
-	Amount     pgtype.Numeric   `json:"amount"`
-	Newbalance pgtype.Numeric   `json:"newbalance"`
+	ID          uuid.UUID        `json:"id"`
+	Date        pgtype.Timestamp `json:"date"`
+	Duration    pgtype.Numeric   `json:"duration"`
+	EventTypeID uuid.UUID        `json:"event_type_id"`
+	Detail      pgtype.Text      `json:"detail"`
+	Rate        int32            `json:"rate"`
+	Amount      pgtype.Numeric   `json:"amount"`
+	Newbalance  pgtype.Numeric   `json:"newbalance"`
 }
 
 func (q *Queries) UpdateEvent(ctx context.Context, arg UpdateEventParams) error {
@@ -156,7 +158,7 @@ func (q *Queries) UpdateEvent(ctx context.Context, arg UpdateEventParams) error 
 		arg.ID,
 		arg.Date,
 		arg.Duration,
-		arg.Type,
+		arg.EventTypeID,
 		arg.Detail,
 		arg.Rate,
 		arg.Amount,

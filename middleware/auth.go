@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/mattg1243/sqlc-fiber/utils"
+	"github.com/mattg1243/willow-server/utils"
 )
 
 func AuthJwt(c *fiber.Ctx) error {

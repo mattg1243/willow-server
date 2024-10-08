@@ -7,8 +7,10 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/mattg1243/sqlc-fiber/db"
-	"github.com/mattg1243/sqlc-fiber/utils"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/mattg1243/willow-server/db"
+	"github.com/mattg1243/willow-server/utils"
 )
 
 func (h *Handler) GetUserHandler(c *fiber.Ctx) error {
@@ -64,7 +66,19 @@ func (h *Handler) CreateUserHandler(c *fiber.Ctx) error {
 		ID: uuid.New(),
 	})
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(err.Error())
+		// Check if it's a Postgres error
+		if pgErr, ok := err.(*pgconn.PgError); ok {
+			// Check if it's a unique violation error
+			if pgErr.Code == pgerrcode.UniqueViolation {
+					return c.Status(fiber.StatusConflict).JSON(fiber.Map{
+							"error": "User already exists",
+					})
+			}
+		}
+		// Return a generic error for any other cases
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to create user:\n" + err.Error(),
+		})
 	}
 	// save contact info
 	_, err = h.queries.CreateUserContactInfo(c.Context(), db.CreateUserContactInfoParams{

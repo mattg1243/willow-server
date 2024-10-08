@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"github.com/jackc/pgx/v5"
-	"github.com/mattg1243/sqlc-fiber/db"
+	"github.com/mattg1243/willow-server/db"
 )
 
 type Handler struct {

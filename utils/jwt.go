@@ -32,7 +32,6 @@ func ValidateJWT(tokenString string) (*JwtPayload, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &JwtPayload{}, func(t *jwt.Token) (interface{}, error) {
 		return []byte(secretString), nil
 	})
-	fmt.Print(token)
 	if err != nil {
 		fmt.Printf("error: %v", err.Error())
 		return &JwtPayload{}, err

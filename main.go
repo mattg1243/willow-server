@@ -7,14 +7,17 @@ import (
 	"os"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
-	"github.com/mattg1243/sqlc-fiber/handlers"
-	"github.com/mattg1243/sqlc-fiber/routes"
+	"github.com/mattg1243/willow-server/handlers"
+	"github.com/mattg1243/willow-server/routes"
 )
 
 func main() {
+
 	ctx := context.Background()
 
 	// load .env
@@ -25,6 +28,10 @@ func main() {
 
 	dbUser := os.Getenv("DB_USER")
 	dbName := os.Getenv("DB_NAME")
+	var clientHost = os.Getenv("CLIENT_HOST")
+	if len(clientHost) == 0 {
+		clientHost = "http://localhost:3000"
+	}
 
 	var conn *pgx.Conn
 
@@ -52,6 +59,10 @@ func main() {
 	app := fiber.New(fiber.Config{
 		Immutable: true,
 	})
+	// middleware
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: clientHost,
+	}))
 	app.Use(logger.New())
 	// load routes
 	routes.LoadRoutes(app, handler)

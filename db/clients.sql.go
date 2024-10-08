@@ -145,7 +145,8 @@ SET
     balancenotifythreshold = $6,
     rate = $7,
     isarchived = $8,
-    update_at = NOW()
+    phone = $9,
+    updated_at = NOW()
 WHERE
     id = $1
 `
@@ -159,6 +160,7 @@ type UpdateClientParams struct {
 	Balancenotifythreshold int32       `json:"balancenotifythreshold"`
 	Rate                   int32       `json:"rate"`
 	Isarchived             pgtype.Bool `json:"isarchived"`
+	Phone                  pgtype.Text `json:"phone"`
 }
 
 func (q *Queries) UpdateClient(ctx context.Context, arg UpdateClientParams) error {
@@ -171,6 +173,7 @@ func (q *Queries) UpdateClient(ctx context.Context, arg UpdateClientParams) erro
 		arg.Balancenotifythreshold,
 		arg.Rate,
 		arg.Isarchived,
+		arg.Phone,
 	)
 	return err
 }

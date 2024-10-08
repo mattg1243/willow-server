@@ -1,17 +1,17 @@
 package routes
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"github.com/mattg1243/sqlc-fiber/handlers"
-	"github.com/mattg1243/sqlc-fiber/middleware"
+	"github.com/go-chi/chi/v5"
+	"github.com/mattg1243/willow-server/handlers"
+	"github.com/mattg1243/willow-server/middleware"
 )
 
-func LoadRoutes(a *fiber.App, h *handlers.Handler) {
+func LoadRoutes(r chi.Router, h *handlers.Handler) {
 	// root
 	a.Get("/", h.GetRootHandler)
 
 	// user routes
-	userRoutes := a.Group("/user")
+	userRoutes := r.Group("/user")
 
 	userRoutes.Post("/", h.CreateUserHandler)
 	userRoutes.Post("/login", h.LoginUserHandler)
@@ -19,8 +19,6 @@ func LoadRoutes(a *fiber.App, h *handlers.Handler) {
 	userRoutes.Get("/contact-info", middleware.AuthJwt, h.GetUserContactInfo)
 	userRoutes.Put("/", middleware.AuthJwt, h.UpdateUserHandler)
 	userRoutes.Delete("/", middleware.AuthJwt, h.DeleteUserHandler)
-
-	// userRoutes.Post("/login", h.LoginUserHandler)
 
 	// client routes
 	clientRoutes := a.Group("/client")
@@ -35,21 +33,8 @@ func LoadRoutes(a *fiber.App, h *handlers.Handler) {
 	eventRoutes := a.Group("/event")
 	eventRoutes.Post("/", h.CreateEventHandler)
 
-	// artist routes
-	// artistRoutes := a.Group("/artists")
+	// event type routes
+	eventTypeRoutes := a.Group("/event-types")
+	eventTypeRoutes.Post("/", middleware.AuthJwt, h.CreateEventTypeHandler)
 
-	// artistRoutes.Post("/", h.CreateArtistHandler)
-	// artistRoutes.Get("/", h.GetArtistsHandler)
-	// artistRoutes.Get("/:id", h.GetArtistHandler)
-	// artistRoutes.Put("/:id", h.UpdateArtistHandler)
-	// artistRoutes.Delete("/:id", h.DeleteArtistHandler)
-
-	// purchase routes
-	// purchaseRoutes := a.Group("/purchases")
-	// purchaseRoutes.Use(keyauth.New(keyauth.Config{
-	// 	KeyLookup: "cookie:access-token",
-	// 	Validator: middleware.AuthJwt,
-	// }))
-	// purchaseRoutes.Post("/", h.CreatePurchaseHandler)
-	// purchaseRoutes.Get("/", h.GetPurchasesHandler)
 }

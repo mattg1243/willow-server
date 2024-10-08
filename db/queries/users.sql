@@ -44,7 +44,15 @@ SET
     updated_at = NOW()
 WHERE
     id = $5
-RETURNING *;
+RETURNING 
+    id, 
+    fname, 
+    lname, 
+    email, 
+    nameforheader, 
+    license, 
+    created_at, 
+    updated_at ;
 
 -- name: DeleteUser :exec
 DELETE FROM users

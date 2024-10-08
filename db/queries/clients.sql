@@ -25,7 +25,8 @@ SET
     balancenotifythreshold = $6,
     rate = $7,
     isarchived = $8,
-    update_at = NOW()
+    phone = $9,
+    updated_at = NOW()
 WHERE
     id = $1;
 

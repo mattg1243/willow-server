@@ -168,7 +168,15 @@ SET
     updated_at = NOW()
 WHERE
     id = $5
-RETURNING id, fname, lname, email, hash, nameforheader, license, created_at, updated_at
+RETURNING 
+    id, 
+    fname, 
+    lname, 
+    email, 
+    nameforheader, 
+    license, 
+    created_at, 
+    updated_at
 `
 
 type UpdateUserParams struct {
@@ -179,7 +187,18 @@ type UpdateUserParams struct {
 	ID            uuid.UUID   `json:"id"`
 }
 
-func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
+type UpdateUserRow struct {
+	ID            uuid.UUID        `json:"id"`
+	Fname         string           `json:"fname"`
+	Lname         string           `json:"lname"`
+	Email         string           `json:"email"`
+	Nameforheader string           `json:"nameforheader"`
+	License       pgtype.Text      `json:"license"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
+	UpdatedAt     pgtype.Timestamp `json:"updated_at"`
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateUserRow, error) {
 	row := q.db.QueryRow(ctx, updateUser,
 		arg.Fname,
 		arg.Lname,
@@ -187,13 +206,12 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		arg.License,
 		arg.ID,
 	)
-	var i User
+	var i UpdateUserRow
 	err := row.Scan(
 		&i.ID,
 		&i.Fname,
 		&i.Lname,
 		&i.Email,
-		&i.Hash,
 		&i.Nameforheader,
 		&i.License,
 		&i.CreatedAt,

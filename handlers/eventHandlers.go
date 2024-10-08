@@ -4,7 +4,8 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/mattg1243/sqlc-fiber/db"
+	"github.com/google/uuid"
+	"github.com/mattg1243/willow-server/db"
 )
 
 func (h *Handler) CreateEventHandler(c *fiber.Ctx) error {
@@ -15,15 +16,17 @@ func (h *Handler) CreateEventHandler(c *fiber.Ctx) error {
 		return c.Status(http.StatusBadRequest).JSON(err.Error())
 	}
 
+	// TODO calculate new balance
+
 	newEvent, err := h.queries.CreateEvent(c.Context(), db.CreateEventParams{
-		ClientID:   event.ClientID,
-		Date:       event.Date,
-		Duration:   event.Duration,
-		Type:       event.Type,
-		Detail:     event.Detail,
-		Rate:       event.Rate,
-		Amount:     event.Amount,
-		Newbalance: event.Newbalance,
+		ClientID:   	event.ClientID,
+		ID: 					uuid.New(),
+		Date:       	event.Date,
+		Duration:   	event.Duration,
+		EventTypeID:	event.EventTypeID,
+		Detail:     	event.Detail,
+		Rate:       	event.Rate,
+		Amount:     	event.Amount,
 	})
 
 	if err != nil {

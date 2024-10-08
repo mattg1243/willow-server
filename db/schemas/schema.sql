@@ -40,13 +40,26 @@ create table clients (
 	updated_at timestamp
 );
 
+
+create table event_types (
+	id uuid primary key not null,
+	user_id uuid not null,
+	foreign key (user_id) references users (id) on delete cascade,
+	source varchar(50), -- default or custom
+	name varchar(255) not null,
+	charge boolean not null,
+	created_at timestamp not null,
+	updated_at timestamp
+);
+
 create table events (
 	id uuid primary key not null,
   client_id uuid not null,
  	foreign key (client_id) references clients (id) on delete cascade,
 	date timestamp not null,
 	duration decimal default 0,
-	"type" varchar(255),
+	event_type_id uuid not null,
+	foreign key (event_type) references event_types (id),
 	"detail" text,
 	rate int not null,
 	amount decimal not null,
