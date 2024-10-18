@@ -1,22 +1,42 @@
-package middleware
+package custom_middleware
 
 import (
-	"errors"
+	"context"
+	"net/http"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/mattg1243/willow-server/utils"
 )
 
-func AuthJwt(c *fiber.Ctx) error {
+type contextKey string
 
-	token := c.Cookies("willow-access-token")
+const (
+	UserIDContextKey contextKey = "user"
+	EmailContextKey contextKey = "email"
+)
 
-	claims, err := utils.ValidateJWT(token)
-	if err != nil {
-		return errors.New("Invalid credentials")
-	}
+func AuthJwt(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
+		cookie, err := r.Cookie("willow-access-token")
+		if err != nil || cookie.Value == "" {
+			http.Error(w, "Unauthorized: Missing or invalid cookie", http.StatusUnauthorized)
+			return
+		}
 
-	c.Locals("user", claims.Id)
-	c.Locals("email", claims.Email)
-	return c.Next()
+		token := cookie.Value
+
+		claims, err := utils.ValidateJWT(token)
+		if err != nil {
+			http.Error(w, "Unauthorized: Missing or invalid cookie", http.StatusUnauthorized)
+			return
+		}
+
+		  // Create a new context with the user and email values
+			ctx := context.WithValue(r.Context(), UserIDContextKey, claims.Id)
+			ctx = context.WithValue(ctx, EmailContextKey, claims.Email)
+
+			// Call the next handler with the new context
+			next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
+
+// TODO create middleware that verifies user ownership of events and clients

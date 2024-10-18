@@ -6,14 +6,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
+	"github.com/mattg1243/willow-server/application"
 	"github.com/mattg1243/willow-server/handlers"
-	"github.com/mattg1243/willow-server/routes"
 )
 
 func main() {
@@ -53,19 +49,12 @@ func main() {
 	}
 
 	defer conn.Close(ctx)
-	// initialize Handler instance
-	handler := handlers.NewHandler(conn)
-	// initlaize app
-	app := fiber.New(fiber.Config{
-		Immutable: true,
-	})
-	// middleware
-	app.Use(cors.New(cors.Config{
-		AllowOrigins: clientHost,
-	}))
-	app.Use(logger.New())
-	// load routes
-	routes.LoadRoutes(app, handler)
-	// listen
-	app.Listen(":8008")
+
+	handler := handlers.New(conn)
+
+	app := application.New(handler)
+	err = app.Start(ctx)
+	if err != nil {
+		fmt.Println("failed to start app:", err)
+	}
 }

@@ -3,14 +3,24 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/log"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/mattg1243/willow-server/db"
 )
+
+// Decodes request body to json before turning json to struct
+func baseBind(r *http.Request, target interface{}) error {
+	decoder := json.NewDecoder(r.Body)
+
+	if err := decoder.Decode(target); err != nil {
+		return err
+	}
+
+	return nil
+}
 
 type PaymentInfo struct {
 	Venmo  string `json:"venmo"`
@@ -34,9 +44,9 @@ type createUserRequest struct {
 	} `json:"contactInfo"`
 }
 
-func (r *createUserRequest) bind(c *fiber.Ctx, u *db.User, cI *db.UserContactInfo, v *Validator) error {
-	// validate
-	if err := c.BodyParser(r); err != nil {
+func (r *createUserRequest) bind(req *http.Request, u *db.User, cI *db.UserContactInfo, v *Validator) error {
+	// Bind to json
+	if err := baseBind(req, r); err != nil {
 		return err
 	}
 
@@ -83,9 +93,8 @@ type updateUserRequest struct {
 	} `json:"contactInfo"`
 }
 
-func (r *updateUserRequest) bind(c *fiber.Ctx, u *db.User, cI *db.UserContactInfo, v *Validator) error {
-	// validate
-	if err := c.BodyParser(r); err != nil {
+func (r *updateUserRequest) bind(req *http.Request, u *db.User, cI *db.UserContactInfo, v *Validator) error {
+	if err := baseBind(req, r); err != nil {
 		return err
 	}
 
@@ -118,8 +127,8 @@ type loginUserRequest struct {
 	Password string `json:"password" validate:"required"`
 }
 
-func (r *loginUserRequest) bind(c *fiber.Ctx, v *Validator) error {
-	if err := c.BodyParser(r); err != nil {
+func (r *loginUserRequest) bind(req *http.Request, v *Validator) error {
+	if err := baseBind(req, r); err != nil {
 		return err
 	}
 
@@ -142,9 +151,8 @@ type createClientRequest struct {
 	} `json:"client"`
 }
 
-func (r *createClientRequest) bind(c *fiber.Ctx, cl *db.Client, v *Validator) error {
-	// validate
-	if err := c.BodyParser(r); err != nil {
+func (r *createClientRequest) bind(req *http.Request, cl *db.Client, v *Validator) error {
+	if err := baseBind(req, r); err != nil {
 		return err
 	}
 
@@ -175,8 +183,8 @@ type updateClientRequest struct {
 	}
 }
 
-func (r *updateClientRequest) bind(c *fiber.Ctx, cl *db.Client, v *Validator) error {
-	if err := c.BodyParser(r); err != nil {
+func (r *updateClientRequest) bind(req *http.Request, cl *db.Client, v *Validator) error {
+	if err := baseBind(req, r); err != nil {
 		return err
 	}
 
@@ -212,14 +220,13 @@ type createEventRequest struct {
 func Float64ToPgNumeric(f float64) pgtype.Numeric {
 	var n pgtype.Numeric
 	if err := n.Scan(fmt.Sprintf("%f", f)); err != nil {
-		log.Error("error scanning float64 to pg numeric: ", err)
+		fmt.Println("error scanning float64 to pg numeric: ", err)
 	}
 	return n
 }
 
-func (r *createEventRequest) bind(c *fiber.Ctx, e *db.Event, v *Validator) error {
-	// validate
-	if err := c.BodyParser(r); err != nil {
+func (r *createEventRequest) bind(req *http.Request, e *db.Event, v *Validator) error {
+	if err := baseBind(req, r); err != nil {
 		return err
 	}
 
@@ -230,18 +237,58 @@ func (r *createEventRequest) bind(c *fiber.Ctx, e *db.Event, v *Validator) error
 	timeLayout := "2006-01-02 15:04:05"
 	timeStr, err := time.Parse(timeLayout, r.Event.Date)
 	if err != nil {
-		log.Error("error parsing time: ", err)
+		fmt.Println("error parsing time: ", err)
 		return err
 	}
 
 	e.Date = pgtype.Timestamp{Time: timeStr, Valid: true}
 	e.Duration = Float64ToPgNumeric(r.Event.Duration)
 	e.EventTypeID = r.Event.EventTypeID
-	e.Detail = pgtype.Text{String: r.Event.Detail}
+	e.Detail = pgtype.Text{String: r.Event.Detail, Valid: true}
 	e.Rate = r.Event.Rate
-	e.Amount = Float64ToPgNumeric(r.Event.Amount)
+	e.Amount = int32(r.Event.Amount)
 	e.ClientID = r.Event.ClientID
-	log.Info("ClientID: ", e.ClientID)
+
+	return nil
+}
+
+type updateEventRequest struct {
+	Event struct {
+		ID 					uuid.UUID `json:"id" validate:"required"`
+		ClientID		uuid.UUID `json:"client_id" validate:"required"`
+		Date       	string    `json:"date" validate:"required"`
+		Duration   	float64   `json:"duration" validate:"required"`
+		EventTypeID	uuid.UUID `json:"event_type_id" validate:"required"`
+		Detail     	string    `json:"detail"`
+		Rate       	int32     `json:"rate"`
+		Amount     	float64   `json:"amount"`
+	} `json:"event"`
+}
+
+func (r *updateEventRequest) bind(req *http.Request, e *db.Event, v *Validator) error {
+	if err := baseBind(req, r); err != nil {
+		return err
+	}
+
+	if err := v.Validate(r); err != nil {
+		return err
+	}
+
+	timeLayout := "2006-01-02 15:04:05"
+	timeStr, err := time.Parse(timeLayout, r.Event.Date)
+	if err != nil {
+		fmt.Println("error parsing time: ", err)
+		return err
+	}
+
+	e.ID = r.Event.ID
+	e.ClientID = r.Event.ClientID
+	e.Date = pgtype.Timestamp{Time: timeStr, Valid: true}
+	e.Duration = Float64ToPgNumeric(r.Event.Duration)
+	e.EventTypeID = r.Event.EventTypeID
+	e.Detail = pgtype.Text{String: r.Event.Detail, Valid: true}
+	e.Rate = r.Event.Rate
+	e.Amount = int32(r.Event.Amount)
 
 	return nil
 }
@@ -254,12 +301,11 @@ type createEventTypeRequest struct {
 	} `json:"eventType" validate:"required"`
 }
 
-func (r* createEventTypeRequest) bind(c *fiber.Ctx, et *db.EventType, v *Validator) error {
-	// Validate
-	if err := c.BodyParser(r); err != nil {
+func (r* createEventTypeRequest) bind(req *http.Request, et *db.EventType, v *Validator) error {
+	if err := baseBind(req, r); err != nil {
 		return err
 	}
-
+	
 	if err := v.Validate(r); err != nil {
 		return err
 	}
@@ -278,12 +324,7 @@ type updateEventTypeRequest struct {
 	} `json:"eventType" validate:"required"`
 }
 
-func (r* updateEventTypeRequest) bind (c *fiber.Ctx, et *db.EventType, v *Validator) error {
-		// Validate
-		if err := c.BodyParser(r); err != nil {
-			return err
-		}
-	
+func (r* updateEventTypeRequest) bind (et *db.EventType, v *Validator) error {
 		if err := v.Validate(r); err != nil {
 			return err
 		}

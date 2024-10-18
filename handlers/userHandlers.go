@@ -1,63 +1,82 @@
 package handlers
 
 import (
-	"log"
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/mattg1243/willow-server/db"
+	custom_middleware "github.com/mattg1243/willow-server/middleware"
 	"github.com/mattg1243/willow-server/utils"
 )
 
-func (h *Handler) GetUserHandler(c *fiber.Ctx) error {
-	userIdStr := c.Locals("user")
-	userId, err := uuid.Parse(userIdStr.(string))
+func (h *Handler) GetUserHandler(w http.ResponseWriter, r *http.Request) {
+	userIdStr := custom_middleware.GetUserFromContext(r)
+	userId, err := uuid.Parse(userIdStr)
+	
 	if err != nil {
-		return c.Status(http.StatusBadRequest).JSON(err.Error())
+		http.Error(w, "User not found with request", http.StatusUnauthorized)
+		return
 	}
-
-	user, err := h.queries.GetUser(c.Context(), userId)
+	// Get user from db
+	user, err := h.queries.GetUser(r.Context(), userId)
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
+	
+	w.Header().Set("Content-Type", "application/json")
 
-	return c.Status(200).JSON(user)
+	// Encode user as json and send to client
+	if err := json.NewEncoder(w).Encode(user); err != nil {
+		http.Error(w, "Failed to encode user in the response", http.StatusInternalServerError)
+		return
+	}
 }
 
-func (h *Handler) GetUserContactInfo(c *fiber.Ctx) error {
-	userIdStr := c.Locals("user")
-	userId, err := uuid.Parse(userIdStr.(string))
+func (h *Handler) GetUserContactInfo(w http.ResponseWriter, r *http.Request) {
+	userIdStr := custom_middleware.GetUserFromContext(r)
+	userId, err := uuid.Parse(userIdStr)
+	
 	if err != nil {
-		return c.Status(http.StatusBadRequest).JSON(err.Error())
+		http.Error(w, "User not found with request", http.StatusUnauthorized)
+		return
 	}
 
-	contactInfo, err := h.queries.GetUserContactInfo(c.Context(), userId)
+	contactInfo, err := h.queries.GetUserContactInfo(r.Context(), userId)
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	return c.Status(200).JSON(contactInfo)
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(contactInfo); err != nil {
+		http.Error(w, "Failed to encode contact info in the response", http.StatusInternalServerError)
+		return
+	}
 }
 
-func (h *Handler) CreateUserHandler(c *fiber.Ctx) error {
+func (h *Handler) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	var user db.User
 	var contactInfo db.UserContactInfo
 	req := &createUserRequest{}
 
-	if err := req.bind(c, &user, &contactInfo, h.validator); err != nil {
-		return c.Status(http.StatusUnprocessableEntity).JSON(err.Error())
+	if err := req.bind(r, &user, &contactInfo, h.validator); err != nil {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		return
 	}
 	// hash the password
 	hash, err := user.HashPassword(req.User.Password)
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	// save user
-	newUser, err := h.queries.CreateUser(c.Context(), db.CreateUserParams{ 
+	newUser, err := h.queries.CreateUser(r.Context(), db.CreateUserParams{ 
 		Hash: hash, 
 		Email: user.Email,
 		Fname: user.Fname,
@@ -65,23 +84,22 @@ func (h *Handler) CreateUserHandler(c *fiber.Ctx) error {
 		Nameforheader: user.Nameforheader,
 		ID: uuid.New(),
 	})
+	
 	if err != nil {
 		// Check if it's a Postgres error
 		if pgErr, ok := err.(*pgconn.PgError); ok {
 			// Check if it's a unique violation error
 			if pgErr.Code == pgerrcode.UniqueViolation {
-					return c.Status(fiber.StatusConflict).JSON(fiber.Map{
-							"error": "User already exists",
-					})
+				http.Error(w, "User already exists", http.StatusBadRequest)
+				return	
 			}
 		}
 		// Return a generic error for any other cases
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Failed to create user:\n" + err.Error(),
-		})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	// save contact info
-	_, err = h.queries.CreateUserContactInfo(c.Context(), db.CreateUserContactInfoParams{
+	_, err = h.queries.CreateUserContactInfo(r.Context(), db.CreateUserContactInfoParams{
 		ID: uuid.New(),
 		Phone: contactInfo.Phone,
 		City: contactInfo.City,
@@ -91,29 +109,36 @@ func (h *Handler) CreateUserHandler(c *fiber.Ctx) error {
 		UserID: newUser.ID,
 	})
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	return c.Status(http.StatusCreated).JSON(newUser)
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(newUser); err != nil {
+		http.Error(w, "Failed to encode user in the response", http.StatusInternalServerError)
+		return
+	}
 }
 
-func (h *Handler) UpdateUserHandler(c *fiber.Ctx) error {
+func (h *Handler) UpdateUserHandler(w http.ResponseWriter, r *http.Request)  {
 	var user db.User
 	var contactInfo db.UserContactInfo
 	req := &updateUserRequest{}
 
 	// parse user id from claims
-	userIdStr := c.Locals("user")
-	userId, err := uuid.Parse(userIdStr.(string))
+	userIdStr := custom_middleware.GetUserFromContext(r)
+	userId, err := uuid.Parse(userIdStr)
 	if err != nil {
-		return c.Status(http.StatusBadRequest).JSON(err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	if err := req.bind(c, &user, &contactInfo, h.validator); err != nil {
-		return c.Status(http.StatusUnprocessableEntity).JSON(err.Error())
+	if err := req.bind(r, &user, &contactInfo, h.validator); err != nil {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		return
 	}
 	// save user
-	updatedUser, err := h.queries.UpdateUser(c.Context(), db.UpdateUserParams{
+	updatedUser, err := h.queries.UpdateUser(r.Context(), db.UpdateUserParams{
 		Fname: user.Fname,
 		Lname: user.Lname,
 		Nameforheader: user.Nameforheader,
@@ -121,10 +146,11 @@ func (h *Handler) UpdateUserHandler(c *fiber.Ctx) error {
 		ID: userId,
 	})
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	// save contact info
-	_, err = h.queries.UpdateUserContactInfo(c.Context(), db.UpdateUserContactInfoParams{
+	_, err = h.queries.UpdateUserContactInfo(r.Context(), db.UpdateUserContactInfoParams{
 		UserID: userId,
 		Phone: contactInfo.Phone,
 		City: contactInfo.City,
@@ -133,39 +159,49 @@ func (h *Handler) UpdateUserHandler(c *fiber.Ctx) error {
 		Zip: contactInfo.Zip,
 		Paymentinfo: contactInfo.Paymentinfo,
 	})
+	
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	return c.JSON(updatedUser)
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(updatedUser); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
-func (h *Handler) DeleteUserHandler(c *fiber.Ctx) error {
-	userIdStr := c.Locals("user").(string)
+func (h *Handler) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
+	userIdStr := custom_middleware.GetUserFromContext(r)
 	userId, err := uuid.Parse(userIdStr)
 	if err != nil {
-		return c.Status(http.StatusBadRequest).JSON(err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	queryErr := h.queries.DeleteUser(c.Context(), userId)
-	if queryErr != nil {
-		return c.Status(http.StatusInternalServerError).JSON(err.Error())
+	err = h.queries.DeleteUser(r.Context(), userId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	return c.Status(200).JSON("User deleted successfully")
+	w.Write([]byte("User deleted successfully"))
 }
 
-func (h *Handler) LoginUserHandler(c *fiber.Ctx) error {
+func (h *Handler) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	req := loginUserRequest{}
 
-	if err := req.bind(c, h.validator); err != nil {
-		return c.Status(http.StatusBadRequest).JSON(err.Error())
+	if err := req.bind(r, h.validator); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	user, err := h.queries.GetUserByEmail(c.Context(), req.Email)
+	user, err := h.queries.GetUserByEmail(r.Context(), req.Email)
 	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	match := user.CheckPassword(req.Password)
@@ -174,20 +210,27 @@ func (h *Handler) LoginUserHandler(c *fiber.Ctx) error {
 		payload := utils.JwtPayload{Id: user.ID.String(), Email: user.Email}
 		jwt, err := utils.GenerateJWT(payload)
 		if err != nil {
-			log.Fatalf(err.Error())
-			return c.Status(http.StatusInternalServerError).JSON(err.Error())
+			fmt.Printf("%q", err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
-		c.Cookie(&fiber.Cookie{
-			Name:     "willow-access-token",
+		// Create and set cookie
+		cookie := &http.Cookie{
+			Name: "willow-access-token",
+			Value: jwt,
 			Expires:  time.Now().Add((time.Hour * 72)),
-			HTTPOnly: false,
-			Secure:   false,
-			SameSite: "lax",
-			Value:    jwt,
-		})
+			HttpOnly: false,
+			Secure:   false, //TODO change to true for production
+			Path: "/",
+			SameSite: http.SameSiteLaxMode,
+		}
 
-		return c.SendStatus(200)
+		http.SetCookie(w, cookie)
+		w.WriteHeader(http.StatusOK)
+		return
+
 	} else {
-		return c.Status(http.StatusUnauthorized).JSON("Invalid login credentials")
+		http.Error(w, "Invalid login credentials.", http.StatusUnauthorized)
+		return
 	}
 }
