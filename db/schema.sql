@@ -67,6 +67,29 @@ CREATE TABLE public.events (
 
 
 --
+-- Name: payout_events; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.payout_events (
+    payout_id uuid NOT NULL,
+    event_id uuid NOT NULL
+);
+
+
+--
+-- Name: payouts; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.payouts (
+    id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    client_id uuid,
+    date timestamp without time zone NOT NULL,
+    amount integer NOT NULL
+);
+
+
+--
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -135,6 +158,22 @@ ALTER TABLE ONLY public.events
 
 
 --
+-- Name: payout_events payout_events_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.payout_events
+    ADD CONSTRAINT payout_events_pkey PRIMARY KEY (payout_id, event_id);
+
+
+--
+-- Name: payouts payouts_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.payouts
+    ADD CONSTRAINT payouts_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: schema_migrations schema_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -164,6 +203,13 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: idx_events_client_user_date; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_events_client_user_date ON public.events USING btree (client_id, user_id, date);
 
 
 --
@@ -207,6 +253,38 @@ ALTER TABLE ONLY public.events
 
 
 --
+-- Name: payout_events payout_events_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.payout_events
+    ADD CONSTRAINT payout_events_event_id_fkey FOREIGN KEY (event_id) REFERENCES public.events(id) ON DELETE CASCADE;
+
+
+--
+-- Name: payout_events payout_events_payout_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.payout_events
+    ADD CONSTRAINT payout_events_payout_id_fkey FOREIGN KEY (payout_id) REFERENCES public.payouts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: payouts payouts_client_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.payouts
+    ADD CONSTRAINT payouts_client_id_fkey FOREIGN KEY (client_id) REFERENCES public.clients(id) ON DELETE CASCADE;
+
+
+--
+-- Name: payouts payouts_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.payouts
+    ADD CONSTRAINT payouts_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
 -- Name: user_contact_info user_contact_info_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -228,4 +306,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20241009181818'),
     ('20241009191604'),
     ('20241009191637'),
-    ('20241009192647');
+    ('20241009192647'),
+    ('20241018224704');

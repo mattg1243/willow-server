@@ -138,7 +138,7 @@ SELECT
     et.charge as charge
 FROM events e
 INNER JOIN event_types et ON e.event_type_id = et.id
-WHERE e.client_id = $1
+WHERE e.client_id = $1 or e.user_id = $1
 ORDER BY e.date ASC
 `
 

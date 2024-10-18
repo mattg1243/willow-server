@@ -24,9 +24,8 @@ func CalculatePayout(events []db.GetEventsRow) (int, []uuid.UUID) {
 		return 0, markAsPaid
 	}
 	fmt.Printf("Total Retainer: %d\n", retainer)
-	// Sort events by a chosen attribute to ensure deterministic order.
+	// Sort by amount to ensure deterministic order
 	sort.Slice(events, func(i, j int) bool {
-		// Sort by date, or you can sort by another field like `Amount`
 		return events[i].Amount < events[j].Amount
 	})
 
@@ -53,5 +52,4 @@ func CalculatePayout(events []db.GetEventsRow) (int, []uuid.UUID) {
 	fmt.Printf("Final Charges: %d, Events to Mark as Paid: %d\n", charges, len(markAsPaid))
 	return charges, markAsPaid
 
-	return charges, markAsPaid
 }

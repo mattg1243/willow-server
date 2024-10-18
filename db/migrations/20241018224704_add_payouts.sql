@@ -1,4 +1,5 @@
-create table users (
+-- migrate:up
+create table if not exists users (
 	id uuid primary key not null,
 	fname varchar (50) not null,
 	lname varchar (50) not null,
@@ -10,7 +11,7 @@ create table users (
 	updated_at timestamp
 );
 
-create table user_contact_info (
+create table if not exists user_contact_info (
 	id uuid primary key not null,
 	user_id uuid not null,
 	foreign key (user_id) references users (id) on delete cascade,
@@ -24,7 +25,7 @@ create table user_contact_info (
 	updated_at timestamp
 );
 
-create table clients (
+create table if not exists clients (
 	id uuid primary key not null,
   user_id uuid not null,
 	foreign key(user_id) references users (id) on delete cascade,
@@ -41,7 +42,7 @@ create table clients (
 );
 
 
-create table event_types (
+create table if not exists event_types (
 	id uuid primary key not null,
 	user_id uuid,
 	foreign key (user_id) references users (id) on delete cascade,
@@ -52,7 +53,7 @@ create table event_types (
 	updated_at timestamp
 );
 
-create table events (
+create table if not exists events (
 	id uuid primary key not null,
 	user_id uuid not null,
 	foreign key (user_id) references users (id) on delete cascade,
@@ -68,10 +69,10 @@ create table events (
 	running_balance int not null
 );
 
-create INDEX idx_events_client_user_date
+create INDEX if not exists idx_events_client_user_date
 on events (client_id, user_id, date);
 
-create table payouts (
+create table if not exists payouts (
 	id uuid primary key not null,
 	user_id uuid not null,
 	foreign key (user_id) references users (id) on delete cascade,
@@ -81,10 +82,19 @@ create table payouts (
 	amount int not null
 );
 
-create table payout_events (
+create table if not exists payout_events (
 	payout_id uuid not null,
 	foreign key (payout_id) references payouts (id) on delete cascade,
 	event_id uuid not null,
 	foreign key (event_id) references events (id) on delete cascade,
 	primary key (payout_id, event_id)
 )
+
+-- migrate:down
+DROP TABLE events;
+DROP TABLE clients;
+DROP TABLE event_types;
+DROP TABLE user_contact_info;
+DROP TABLE users;
+DROP TABLE payouts;
+DROP TABLE payout_events;

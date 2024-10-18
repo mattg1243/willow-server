@@ -7,7 +7,7 @@ import (
 	"github.com/mattg1243/willow-server/db" // Replace with your actual db package path
 )
 
-// Helper function to create a GetEventRow for testing
+// Helper function to create a GetEventsRow for testing
 func createTestEvent(id string, amount int32, charge bool) db.GetEventsRow {
 	return db.GetEventsRow{
 		ID:          uuid.MustParse(id),
