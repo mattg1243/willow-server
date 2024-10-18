@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createEventType = `-- name: CreateEventType :one
@@ -20,10 +21,10 @@ INSERT INTO event_types (
 `
 
 type CreateEventTypeParams struct {
-	ID     uuid.UUID `json:"id"`
-	Name   string    `json:"name"`
-	UserID uuid.UUID `json:"user_id"`
-	Charge bool      `json:"charge"`
+	ID     uuid.UUID   `json:"id"`
+	Name   string      `json:"name"`
+	UserID pgtype.UUID `json:"user_id"`
+	Charge bool        `json:"charge"`
 }
 
 func (q *Queries) CreateEventType(ctx context.Context, arg CreateEventTypeParams) (EventType, error) {
@@ -83,7 +84,7 @@ FROM event_types
 WHERE user_id = $1
 `
 
-func (q *Queries) GetEventTypes(ctx context.Context, userID uuid.UUID) ([]EventType, error) {
+func (q *Queries) GetEventTypes(ctx context.Context, userID pgtype.UUID) ([]EventType, error) {
 	rows, err := q.db.Query(ctx, getEventTypes, userID)
 	if err != nil {
 		return nil, err
