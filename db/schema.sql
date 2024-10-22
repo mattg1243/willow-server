@@ -62,7 +62,8 @@ CREATE TABLE public.events (
     detail text,
     rate integer NOT NULL,
     amount integer NOT NULL,
-    running_balance integer NOT NULL
+    running_balance integer NOT NULL,
+    paid boolean DEFAULT false
 );
 
 
@@ -307,4 +308,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20241009191604'),
     ('20241009191637'),
     ('20241009192647'),
-    ('20241018224704');
+    ('20241018224704'),
+    ('20241021185958');

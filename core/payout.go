@@ -31,7 +31,7 @@ func CalculatePayout(events []db.GetEventsRow) (int, []uuid.UUID) {
 
 	remainingRetainer := retainer
 	for j := 0; j < len(events); j++ {
-		if events[j].Charge {
+		if events[j].Charge && !events[j].Paid.Bool {
 			eventAmount := int(events[j].Amount)
 
 			fmt.Printf("Processing event %s with amount %d\n", events[j].ID, eventAmount)

@@ -17,7 +17,7 @@ INSERT INTO events (
     client_id, user_id, date, duration, event_type_id, detail, rate, amount, running_balance, id
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
-) RETURNING id, user_id, client_id, date, duration, event_type_id, detail, rate, amount, running_balance
+) RETURNING id, user_id, client_id, date, duration, event_type_id, detail, rate, amount, running_balance, paid
 `
 
 type CreateEventParams struct {
@@ -58,6 +58,7 @@ func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (Event
 		&i.Rate,
 		&i.Amount,
 		&i.RunningBalance,
+		&i.Paid,
 	)
 	return i, err
 }
@@ -84,6 +85,7 @@ SELECT
     e.rate as rate,
     e.amount::INTEGER as amount,
     e.running_balance::INTEGER as running_balance,
+    e.paid as paid,
     et.charge as charge
 FROM events e
 INNER JOIN event_types et ON e.event_type_id = et.id
@@ -101,6 +103,7 @@ type GetEventRow struct {
 	Rate           int32              `json:"rate"`
 	Amount         int32              `json:"amount"`
 	RunningBalance int32              `json:"running_balance"`
+	Paid           pgtype.Bool        `json:"paid"`
 	Charge         bool               `json:"charge"`
 }
 
@@ -118,6 +121,7 @@ func (q *Queries) GetEvent(ctx context.Context, id uuid.UUID) (GetEventRow, erro
 		&i.Rate,
 		&i.Amount,
 		&i.RunningBalance,
+		&i.Paid,
 		&i.Charge,
 	)
 	return i, err
@@ -135,6 +139,7 @@ SELECT
     e.rate as rate,
     e.amount::INTEGER as amount,
     e.running_balance::INTEGER as running_balance,
+    e.paid as paid,
     et.charge as charge
 FROM events e
 INNER JOIN event_types et ON e.event_type_id = et.id
@@ -153,6 +158,7 @@ type GetEventsRow struct {
 	Rate           int32              `json:"rate"`
 	Amount         int32              `json:"amount"`
 	RunningBalance int32              `json:"running_balance"`
+	Paid           pgtype.Bool        `json:"paid"`
 	Charge         bool               `json:"charge"`
 }
 
@@ -176,6 +182,7 @@ func (q *Queries) GetEvents(ctx context.Context, clientID uuid.UUID) ([]GetEvent
 			&i.Rate,
 			&i.Amount,
 			&i.RunningBalance,
+			&i.Paid,
 			&i.Charge,
 		); err != nil {
 			return nil, err
@@ -188,6 +195,125 @@ func (q *Queries) GetEvents(ctx context.Context, clientID uuid.UUID) ([]GetEvent
 	return items, nil
 }
 
+const getPayoutEvents = `-- name: GetPayoutEvents :many
+SELECT 
+    e.id as id,
+    e.user_id as user_id,
+    e.client_id as client_id,
+    e.date::timestamptz as "date",
+    e.duration as duration,
+    et.id as event_type_id,
+    e.detail as detail,
+    e.rate as rate,
+    e.amount::INTEGER as amount,
+    e.running_balance::INTEGER as running_balance,
+    e.paid as paid,
+    et.charge as charge
+FROM events e
+INNER JOIN event_types et ON e.event_type_id = et.id
+INNER JOIN payout_events pe ON pe.event_id = e.id
+WHERE pe.payout_id = $1
+ORDER BY e.date ASC
+`
+
+type GetPayoutEventsRow struct {
+	ID             uuid.UUID          `json:"id"`
+	UserID         uuid.UUID          `json:"user_id"`
+	ClientID       uuid.UUID          `json:"client_id"`
+	Date           pgtype.Timestamptz `json:"date"`
+	Duration       pgtype.Numeric     `json:"duration"`
+	EventTypeID    uuid.UUID          `json:"event_type_id"`
+	Detail         pgtype.Text        `json:"detail"`
+	Rate           int32              `json:"rate"`
+	Amount         int32              `json:"amount"`
+	RunningBalance int32              `json:"running_balance"`
+	Paid           pgtype.Bool        `json:"paid"`
+	Charge         bool               `json:"charge"`
+}
+
+func (q *Queries) GetPayoutEvents(ctx context.Context, payoutID uuid.UUID) ([]GetPayoutEventsRow, error) {
+	rows, err := q.db.Query(ctx, getPayoutEvents, payoutID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetPayoutEventsRow
+	for rows.Next() {
+		var i GetPayoutEventsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.ClientID,
+			&i.Date,
+			&i.Duration,
+			&i.EventTypeID,
+			&i.Detail,
+			&i.Rate,
+			&i.Amount,
+			&i.RunningBalance,
+			&i.Paid,
+			&i.Charge,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const markEventPaid = `-- name: MarkEventPaid :one
+UPDATE events
+    SET paid = $2
+WHERE
+    id = $1
+RETURNING id, user_id, client_id, date, duration, event_type_id, detail, rate, amount, running_balance, paid
+`
+
+type MarkEventPaidParams struct {
+	ID   uuid.UUID   `json:"id"`
+	Paid pgtype.Bool `json:"paid"`
+}
+
+func (q *Queries) MarkEventPaid(ctx context.Context, arg MarkEventPaidParams) (Event, error) {
+	row := q.db.QueryRow(ctx, markEventPaid, arg.ID, arg.Paid)
+	var i Event
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.ClientID,
+		&i.Date,
+		&i.Duration,
+		&i.EventTypeID,
+		&i.Detail,
+		&i.Rate,
+		&i.Amount,
+		&i.RunningBalance,
+		&i.Paid,
+	)
+	return i, err
+}
+
+const setEventPaid = `-- name: SetEventPaid :exec
+UPDATE events
+SET
+    paid = $2
+WHERE
+    id = $1
+`
+
+type SetEventPaidParams struct {
+	ID   uuid.UUID   `json:"id"`
+	Paid pgtype.Bool `json:"paid"`
+}
+
+func (q *Queries) SetEventPaid(ctx context.Context, arg SetEventPaidParams) error {
+	_, err := q.db.Exec(ctx, setEventPaid, arg.ID, arg.Paid)
+	return err
+}
+
 const updateEvent = `-- name: UpdateEvent :one
 UPDATE events
 SET
@@ -197,10 +323,11 @@ SET
     detail = $5,
     rate = $6,
     amount = $7,
-    running_balance = $8
+    running_balance = $8,
+    paid = $9
 WHERE
     id = $1
-RETURNING id, user_id, client_id, date, duration, event_type_id, detail, rate, amount, running_balance
+RETURNING id, user_id, client_id, date, duration, event_type_id, detail, rate, amount, running_balance, paid
 `
 
 type UpdateEventParams struct {
@@ -212,6 +339,7 @@ type UpdateEventParams struct {
 	Rate           int32            `json:"rate"`
 	Amount         int32            `json:"amount"`
 	RunningBalance int32            `json:"running_balance"`
+	Paid           pgtype.Bool      `json:"paid"`
 }
 
 func (q *Queries) UpdateEvent(ctx context.Context, arg UpdateEventParams) (Event, error) {
@@ -224,6 +352,7 @@ func (q *Queries) UpdateEvent(ctx context.Context, arg UpdateEventParams) (Event
 		arg.Rate,
 		arg.Amount,
 		arg.RunningBalance,
+		arg.Paid,
 	)
 	var i Event
 	err := row.Scan(
@@ -237,6 +366,7 @@ func (q *Queries) UpdateEvent(ctx context.Context, arg UpdateEventParams) (Event
 		&i.Rate,
 		&i.Amount,
 		&i.RunningBalance,
+		&i.Paid,
 	)
 	return i, err
 }

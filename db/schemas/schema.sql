@@ -65,7 +65,8 @@ create table events (
 	"detail" text,
 	rate int not null,
 	amount int not null,
-	running_balance int not null
+	running_balance int not null,
+	paid boolean default false
 );
 
 create INDEX idx_events_client_user_date

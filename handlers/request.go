@@ -139,6 +139,24 @@ func (r *loginUserRequest) bind(req *http.Request, v *Validator) error {
 	return nil
 }
 
+type payoutRequest struct {
+	Payout 		int 					`json:"payout"`
+	Events 		[]uuid.UUID		`json:"events"`
+	ClientID  uuid.UUID 		`json:"client_id"`
+}
+
+func (r *payoutRequest) bind(req *http.Request, v *Validator) error {
+	if err := baseBind(req, r); err != nil {
+		return err
+	}
+
+	if err := v.Validate(r); err != nil {
+		return err
+	}
+	
+	return nil
+}
+
 // client requests
 type createClientRequest struct {
 	Client struct {

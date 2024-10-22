@@ -35,6 +35,7 @@ type Event struct {
 	Rate           int32            `json:"rate"`
 	Amount         int32            `json:"amount"`
 	RunningBalance int32            `json:"running_balance"`
+	Paid           pgtype.Bool      `json:"paid"`
 }
 
 type EventType struct {

@@ -12,27 +12,45 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const addEventToPayout = `-- name: AddEventToPayout :one
+insert into payout_events (
+  payout_id, event_id
+) values (
+  $1, $2
+) returning payout_id, event_id
+`
+
+type AddEventToPayoutParams struct {
+	PayoutID uuid.UUID `json:"payout_id"`
+	EventID  uuid.UUID `json:"event_id"`
+}
+
+func (q *Queries) AddEventToPayout(ctx context.Context, arg AddEventToPayoutParams) (PayoutEvent, error) {
+	row := q.db.QueryRow(ctx, addEventToPayout, arg.PayoutID, arg.EventID)
+	var i PayoutEvent
+	err := row.Scan(&i.PayoutID, &i.EventID)
+	return i, err
+}
+
 const createPayout = `-- name: CreatePayout :one
 insert into payouts (
   id, user_id, date, amount, client_id
 ) values (
-  $1, $2, $3, $4, $5
+  $1, $2, NOW(), $3, $4
 ) returning id, user_id, client_id, date, amount
 `
 
 type CreatePayoutParams struct {
-	ID       uuid.UUID        `json:"id"`
-	UserID   uuid.UUID        `json:"user_id"`
-	Date     pgtype.Timestamp `json:"date"`
-	Amount   int32            `json:"amount"`
-	ClientID pgtype.UUID      `json:"client_id"`
+	ID       uuid.UUID   `json:"id"`
+	UserID   uuid.UUID   `json:"user_id"`
+	Amount   int32       `json:"amount"`
+	ClientID pgtype.UUID `json:"client_id"`
 }
 
 func (q *Queries) CreatePayout(ctx context.Context, arg CreatePayoutParams) (Payout, error) {
 	row := q.db.QueryRow(ctx, createPayout,
 		arg.ID,
 		arg.UserID,
-		arg.Date,
 		arg.Amount,
 		arg.ClientID,
 	)

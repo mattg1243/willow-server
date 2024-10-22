@@ -1,6 +1,8 @@
 package application
 
 import (
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/mattg1243/willow-server/handlers"
@@ -12,6 +14,7 @@ func loadRoutes(h *handlers.Handler) *chi.Mux {
 	router := chi.NewRouter()
 	// Global middleware
 	router.Use(middleware.Logger)
+	router.Get("/", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(200) })
 	// Attach user routes
 	userRouter := chi.NewRouter()
 	loadUserRoutes(userRouter, h)
@@ -28,6 +31,10 @@ func loadRoutes(h *handlers.Handler) *chi.Mux {
 	eventTypeRouter := chi.NewRouter()
 	loadEventTypeRoutes(eventTypeRouter, h)
 	router.Mount("/event-type", eventTypeRouter)
+	// Attach payout routes
+	payoutRouter := chi.NewRouter()
+	loadPayoutRoutes(payoutRouter, h)
+	router.Mount("/payout", payoutRouter)
 	// Return the completed router
 	return router
 }
@@ -68,6 +75,18 @@ func loadEventRoutes(router chi.Router, h *handlers.Handler){
 		router.Get("/", h.GetEventHandler)
 		router.Put("/", h.UpdateEventHandler)
 		router.Delete("/", h.DeleteEventHandler)
+	})
+}
+
+
+func loadPayoutRoutes(router chi.Router, h *handlers.Handler) {
+	router.Group(func(router chi.Router) {
+		// TODO add middleware to check ownership of payout
+		router.Use(custom_middleware.AuthJwt)
+		router.Get("/make", h.MakePayoutHandler)
+		router.Post("/", h.SavePayoutHandler)
+		router.Get("/", h.GetPayoutHandler)
+		router.Delete("/", h.DeletePayoutHandler)
 	})
 }
 

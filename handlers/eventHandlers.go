@@ -75,9 +75,10 @@ func (h *Handler) CreateEventHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetEventHandler (w http.ResponseWriter, r *http.Request) {
 	eventIDQuery := r.URL.Query().Get("id")
 	clientIDQuery := r.URL.Query().Get("clientId")
+	payoutIDQuery := r.URL.Query().Get("payoutId")
 	// Make sure one id param is provided
-	if eventIDQuery == "" && clientIDQuery == "" {
-		http.Error(w, "Neither clientId or eventId provided with request", http.StatusInternalServerError)
+	if eventIDQuery == "" && clientIDQuery == "" && payoutIDQuery == "" {
+		http.Error(w, "Neither clientId, eventId or payoutId provided with request", http.StatusInternalServerError)
 		return
 	}
 	// Handle eventId
@@ -109,6 +110,26 @@ func (h *Handler) GetEventHandler (w http.ResponseWriter, r *http.Request) {
 		}
 
 		events, err := h.queries.GetEvents(r.Context(), clientID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(events); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+	// Handle payout id
+	if payoutIDQuery != "" {
+		payoutID, err := uuid.Parse(payoutIDQuery)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		events, err := h.queries.GetPayoutEvents(r.Context(), payoutID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

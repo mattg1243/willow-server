@@ -2,7 +2,14 @@
 insert into payouts (
   id, user_id, date, amount, client_id
 ) values (
-  $1, $2, $3, $4, $5
+  $1, $2, NOW(), $3, $4
+) returning *;
+
+-- name: AddEventToPayout :one
+insert into payout_events (
+  payout_id, event_id
+) values (
+  $1, $2
 ) returning *;
 
 -- name: GetPayout :one

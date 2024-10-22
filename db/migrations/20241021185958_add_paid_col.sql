@@ -91,11 +91,18 @@ create table if not exists payout_events (
 	primary key (payout_id, event_id)
 )
 
+INSERT INTO event_types (id, user_id, source, name, charge, created_at, updated_at)
+VALUES 
+    ('1a4f1c7d-2e2c-4b0c-9d60-3a2829f1c4de', null, 'default', 'Meeting', true, NOW(), NOW()),
+    ('2b6e6f4d-3d5d-4c8f-85c6-1c29f6d741f8', null, 'default', 'Email', true, NOW(), NOW()),
+    ('3c8a8b7e-4e7d-4e8f-9a5b-6a4cf2e42b1c', null, 'default', 'Misc.', true, NOW(), NOW()),
+    ('4d9e9d8f-5f9f-4f9a-9b7d-7b5cf3e53d2e', null, 'default', 'Retainer', false, NOW(), NOW());
+
 -- migrate:down
+DROP TABLE payout_events;
+DROP TABLE payouts;
 DROP TABLE events;
 DROP TABLE clients;
 DROP TABLE event_types;
 DROP TABLE user_contact_info;
 DROP TABLE users;
-DROP TABLE payouts;
-DROP TABLE payout_events;
