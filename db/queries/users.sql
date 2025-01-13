@@ -52,7 +52,7 @@ RETURNING
     nameforheader, 
     license, 
     created_at, 
-    updated_at ;
+    updated_at;
 
 -- name: DeleteUser :exec
 DELETE FROM users

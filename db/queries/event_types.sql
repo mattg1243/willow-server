@@ -1,8 +1,8 @@
 -- name: CreateEventType :one
 INSERT INTO event_types (
-  id, "name", user_id, charge, source
+  id, title, user_id, charge, created_at, updated_at
 ) values (
-  $1, $2, $3, $4, "custom"
+  $1, $2, $3, $4, NOW(), NOW()
 ) RETURNING *;
 
 -- name: GetEventType :one
@@ -15,13 +15,15 @@ SELECT *
 FROM event_types
 WHERE user_id = $1;
 
--- name: UpdateEventType :exec
+-- name: UpdateEventType :one
 UPDATE event_types
 SET
-  "name" = $2,
-  charge = $3
+  title = $2,
+  charge = $3,
+  updated_at = NOW()
 WHERE
-  id = $1;
+  id = $1
+RETURNING *;
 
 -- name: DeleteEventTypes :exec
 DELETE FROM event_types

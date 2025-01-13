@@ -1,8 +1,8 @@
 -- name: CreatePayout :one
 insert into payouts (
-  id, user_id, date, amount, client_id
+  id, user_id, date, amount, client_id, created_at, updated_at
 ) values (
-  $1, $2, NOW(), $3, $4
+  $1, $2, NOW(), $3, $4, NOW(), NOW()
 ) returning *;
 
 -- name: AddEventToPayout :one

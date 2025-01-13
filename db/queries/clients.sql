@@ -32,4 +32,11 @@ WHERE
 
 -- name: DeleteClient :exec
 DELETE FROM clients
-WHERE id = $1;
+WHERE id = ANY($1::uuid[]);
+
+-- name: BatchArchiveClients :exec
+UPDATE clients
+SET
+  isarchived = true
+WHERE
+  id = ANY($1::uuid[]);

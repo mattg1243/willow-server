@@ -1,8 +1,8 @@
 -- name: CreateEvent :one
 INSERT INTO events (
-    client_id, user_id, date, duration, event_type_id, detail, rate, amount, running_balance, id
+    client_id, user_id, date, duration, event_type_id, detail, rate, amount, running_balance, id, created_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW()
 ) RETURNING *;
 
 -- name: GetEvent :one
@@ -13,6 +13,7 @@ SELECT
     e.date::timestamptz as "date",
     e.duration as duration,
     et.id as event_type_id,
+    et.title as event_type_title,
     e.detail as detail,
     e.rate as rate,
     e.amount::INTEGER as amount,
@@ -31,6 +32,7 @@ SELECT
     e.date::timestamptz as "date",
     e.duration as duration,
     et.id as event_type_id,
+    et.title as event_type_title,
     e.detail as detail,
     e.rate as rate,
     e.amount::INTEGER as amount,
@@ -42,6 +44,11 @@ INNER JOIN event_types et ON e.event_type_id = et.id
 WHERE e.client_id = $1 or e.user_id = $1
 ORDER BY e.date ASC;
 
+-- name: SetEventsToMiscType :exec
+UPDATE events
+SET event_type_id = $2
+WHERE event_type_id = $1;
+
 -- name: GetPayoutEvents :many
 SELECT 
     e.id as id,
@@ -50,6 +57,7 @@ SELECT
     e.date::timestamptz as "date",
     e.duration as duration,
     et.id as event_type_id,
+    et.title as event_type_title,
     e.detail as detail,
     e.rate as rate,
     e.amount::INTEGER as amount,
@@ -72,14 +80,18 @@ SET
     rate = $6,
     amount = $7,
     running_balance = $8,
-    paid = $9
+    paid = $9,
+    updated_at = NOW()
 WHERE
     id = $1
 RETURNING *;
 
 -- name: MarkEventPaid :one
 UPDATE events
-    SET paid = $2
+SET 
+    paid = $2,
+    updated_at = NOW()
+
 WHERE
     id = $1
 RETURNING *;
@@ -94,10 +106,11 @@ WHERE
 -- name: SetEventPaid :exec
 UPDATE events
 SET
-    paid = $2
+    paid = $2,
+    updated_at = NOW()
 WHERE
     id = $1;
 
--- name: DeleteEvent :exec
+-- name: DeleteEvents :exec
 DELETE FROM events
-WHERE id = $1;
+WHERE id = ANY($1::uuid[]);
