@@ -25,31 +25,21 @@ func main() {
 		}
 	}
 
-	dbUser := os.Getenv("DB_USER")
-	dbName := os.Getenv("DB_NAME")
-	var clientHost = os.Getenv("CLIENT_HOST")
+	dbUrl := os.Getenv("DATABASE_URL")
+	if len(dbUrl) == 0 {
+		log.Fatal("DATABASE_URL must be set")
+	}
+
+	clientHost := os.Getenv("CLIENT_HOST")
 	if len(clientHost) == 0 {
 		clientHost = "http://localhost:3000"
 	}
 
-	var conn *pgx.Conn
-	var err error
-
-	// if we are running in docker, we need to use the docker host
-	if os.Getenv("DOCKER") == "true" {
-		dbHost := os.Getenv("DB_HOST")
-		dbPass := os.Getenv("DB_PASSWORD")
-		conn, err = pgx.Connect(ctx, fmt.Sprintf("host=%s user=%s password=%s dbname=%s", dbHost, dbUser, dbPass, dbName))
-		if err != nil {
-			log.Fatalf("An error occured:\n%s", err)
-			return
-		}
-	} else {
-		conn, err = pgx.Connect(ctx, fmt.Sprintf("user=%s dbname=%s", dbUser, dbName))
-		if err != nil {
-			log.Fatalf("An error occured:\n%s", err)
-			return
-		}
+	// connect to db
+	conn, err := pgx.Connect(ctx, dbUrl)
+	if err != nil {
+		log.Fatalf("An error occured:\n%s", err)
+		return
 	}
 
 	defer conn.Close(ctx)
