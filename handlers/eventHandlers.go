@@ -163,7 +163,6 @@ func (h *Handler) UpdateEventHandler(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		log.Fatalf("error updating event")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -197,15 +196,23 @@ func (h *Handler) UpdateEventHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) DeleteEventHandler(w http.ResponseWriter, r *http.Request) {
-	eventIDQuery := r.URL.Query().Get("id")
-	eventID, err := uuid.Parse(eventIDQuery)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	eventIDsStr := r.URL.Query()["id"]
+	if len(eventIDsStr) == 0 {
+		http.Error(w, "No event id provided", http.StatusBadRequest)
 		return
 	}
 
-	err = h.queries.DeleteEvent(r.Context(), eventID)
+	eventIDs := make([]uuid.UUID, len(eventIDsStr))
+	for i, idStr := range eventIDsStr {
+		id, err := uuid.Parse(idStr)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		eventIDs[i] = id
+	}
+
+	err := h.queries.DeleteEvents(r.Context(), eventIDs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

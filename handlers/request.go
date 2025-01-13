@@ -190,14 +190,15 @@ func (r *createClientRequest) bind(req *http.Request, cl *db.Client, v *Validato
 
 type updateClientRequest struct {
 	Client struct {
-		Fname                  string `json:"fname"`
-		Lname                  string `json:"lname"`
-		Email                  string `json:"email"`
-		Phone									 string `json:"phone"`
-		Balance                int32  `json:"balance"`
-		Balancenotifythreshold int32  `json:"balancenotifythreshold"`
-		Rate                   int32  `json:"rate"`
-		Isarchived             bool   `json:"isArchived"`
+		ID										 uuid.UUID	`json:"id"`
+		Fname                  string 		`json:"fname"`
+		Lname                  string 		`json:"lname"`
+		Email                  string 		`json:"email"`
+		Phone									 string 		`json:"phone"`
+		Balance                int32  		`json:"balance"`
+		Balancenotifythreshold int32  		`json:"balancenotifythreshold"`
+		Rate                   int32  		`json:"rate"`
+		Isarchived             bool   		`json:"isArchived"`
 	}
 }
 
@@ -314,7 +315,7 @@ func (r *updateEventRequest) bind(req *http.Request, e *db.Event, v *Validator) 
 // event type requests
 type createEventTypeRequest struct {
 	EventType struct {
-		Name 		string 	`json:"name" validate:"required"`
+		Title 		string 	`json:"title" validate:"required"`
 		Charge 	bool 		`json:"charge" validate:"required"`
 	} `json:"eventType" validate:"required"`
 }
@@ -329,7 +330,7 @@ func (r* createEventTypeRequest) bind(req *http.Request, et *db.EventType, v *Va
 	}
 	// Bind
 	et.Charge = r.EventType.Charge
-	et.Name = r.EventType.Name
+	et.Title = r.EventType.Title
 
 	return nil
 }
@@ -337,19 +338,23 @@ func (r* createEventTypeRequest) bind(req *http.Request, et *db.EventType, v *Va
 type updateEventTypeRequest struct {
 	EventType struct {
 		ID 			uuid.UUID 	`json:"id" validate:"required"`
-		Name 		string 			`json:"name" validate:"required"`
+		Title 		string 			`json:"title" validate:"required"`
 		Charge 	bool 				`json:"charge" validate:"required"`
 	} `json:"eventType" validate:"required"`
 }
 
-func (r* updateEventTypeRequest) bind (et *db.EventType, v *Validator) error {
-		if err := v.Validate(r); err != nil {
+func (r* updateEventTypeRequest) bind (req *http.Request, et *db.EventType, v *Validator) error {
+	if err := baseBind(req, r); err != nil {
+		return err
+	}
+	
+	if err := v.Validate(r); err != nil {
 			return err
 		}
 		// Bind
 		et.ID = r.EventType.ID
 		et.Charge = r.EventType.Charge
-		et.Name = r.EventType.Name
+		et.Title = r.EventType.Title
 	
 		return nil
 }

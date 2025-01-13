@@ -200,7 +200,11 @@ func (h *Handler) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.queries.GetUserByEmail(r.Context(), req.Email)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		if err.Error() == "no rows in result set" {
+			http.Error(w, "No user found with that email address", http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 

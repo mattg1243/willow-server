@@ -87,13 +87,6 @@ func (h *Handler) GetClientHandler(w http.ResponseWriter, r *http.Request)  {
 }
 
 func (h *Handler) UpdateClientHandler(w http.ResponseWriter, r *http.Request) {
-	clientIDStr := r.URL.Query().Get("id")
-	clientID, err := uuid.Parse(clientIDStr)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
 	var req updateClientRequest
 	var client db.Client
 
@@ -102,8 +95,8 @@ func (h *Handler) UpdateClientHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.queries.UpdateClient(r.Context(), db.UpdateClientParams{
-		ID:                     clientID,
+	err := h.queries.UpdateClient(r.Context(), db.UpdateClientParams{
+		ID:                     client.ID,
 		Fname:                  client.Fname,
 		Lname:                  client.Lname,
 		Email:                  client.Email,
@@ -118,7 +111,7 @@ func (h *Handler) UpdateClientHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedClient, err := h.queries.GetClient(r.Context(), clientID)
+	updatedClient, err := h.queries.GetClient(r.Context(), client.ID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -132,18 +125,53 @@ func (h *Handler) UpdateClientHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) DeleteClientHandler(w http.ResponseWriter, r *http.Request) {
-	clientIDStr := r.URL.Query()["id"][0]
-	clientID, err := uuid.Parse(clientIDStr)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	clientIDsStr := r.URL.Query()["id"]
+	if len(clientIDsStr) == 0 {
+		http.Error(w, "No ids provided", http.StatusBadRequest)
 		return
 	}
 
-	err = h.queries.DeleteClient(r.Context(), clientID)
+	clientIDs := make([]uuid.UUID, len(clientIDsStr))
+	for i, idStr := range clientIDsStr {
+		clientID, err := uuid.Parse(idStr)
+		if err != nil {
+			http.Error(w, "Invalid UUID: "+idStr, http.StatusBadRequest)
+			return
+		}
+		clientIDs[i] = clientID
+	}
+
+	err := h.queries.DeleteClient(r.Context(), clientIDs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Write([]byte("Client deleted successfully"))
+	w.Write([]byte("Client(s) deleted successfully"))
+}
+
+func (h *Handler) BatchArchiveClientsHandler(w http.ResponseWriter, r *http.Request) {
+	clientIDsStr := r.URL.Query()["id"]
+	if len(clientIDsStr) == 0 {
+		http.Error(w, "No ids provided", http.StatusBadRequest)
+		return
+	}
+
+	clientIDs := make([]uuid.UUID, len(clientIDsStr))
+	for i, idStr := range clientIDsStr {
+		clientID, err := uuid.Parse(idStr)
+		if err != nil {
+			http.Error(w, "Invalid UUID: "+idStr, http.StatusBadRequest)
+			return
+		}
+		clientIDs[i] = clientID
+	}
+
+	err := h.queries.BatchArchiveClients(r.Context(), clientIDs)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write([]byte("Client(s) archived successfully"))
 }

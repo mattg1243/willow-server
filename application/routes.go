@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/mattg1243/willow-server/handlers"
 	custom_middleware "github.com/mattg1243/willow-server/middleware"
 )
@@ -13,8 +14,12 @@ func loadRoutes(h *handlers.Handler) *chi.Mux {
 	// Create new chi router
 	router := chi.NewRouter()
 	// Global middleware
-	router.Use(middleware.Logger)
+	attachMiddleware(router)
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(200) })
+	// Attach auth routes
+	authRouter := chi.NewRouter()
+	loadAuthRoutes(authRouter, h)
+	router.Mount("/auth", authRouter)
 	// Attach user routes
 	userRouter := chi.NewRouter()
 	loadUserRoutes(userRouter, h)
@@ -30,7 +35,7 @@ func loadRoutes(h *handlers.Handler) *chi.Mux {
 	// Attach event type routes
 	eventTypeRouter := chi.NewRouter()
 	loadEventTypeRoutes(eventTypeRouter, h)
-	router.Mount("/event-type", eventTypeRouter)
+	router.Mount("/event-types", eventTypeRouter)
 	// Attach payout routes
 	payoutRouter := chi.NewRouter()
 	loadPayoutRoutes(payoutRouter, h)
@@ -39,17 +44,22 @@ func loadRoutes(h *handlers.Handler) *chi.Mux {
 	return router
 }
 
-// Attaches all user releated handlers to chi router
-func loadUserRoutes(router chi.Router, h *handlers.Handler) {
-// no auth
-	router.Group(func(router chi.Router) {
-		router.Post("/", h.CreateUserHandler)
-		router.Post("/login", h.LoginUserHandler)
-	})
-// auth
+func loadAuthRoutes(router chi.Router, h *handlers.Handler) {
 	router.Group(func(router chi.Router) {
 		router.Use(custom_middleware.AuthJwt)
-		router.Get("/", h.GetUserHandler)
+		router.Get("/me", h.GetUserHandler)
+	})
+
+	router.Group(func(router chi.Router) {
+		router.Post("/register", h.CreateUserHandler)
+		router.Post("/login", h.LoginUserHandler)
+	})
+}
+
+// Attaches all user releated handlers to chi router
+func loadUserRoutes(router chi.Router, h *handlers.Handler) {
+	router.Group(func(router chi.Router) {
+		router.Use(custom_middleware.AuthJwt)
 		router.Get("/contact-info", h.GetUserContactInfo)
 		router.Put("/", h.UpdateUserHandler)
 		router.Delete("/", h.DeleteUserHandler)
@@ -62,7 +72,8 @@ func loadClientRoutes(router chi.Router, h *handlers.Handler) {
 		router.Use(custom_middleware.AuthJwt)
 		router.Post("/", h.CreateClientHandler)
 		router.Get("/", h.GetClientHandler)
-		router.Put("/", h.CreateClientHandler)
+		router.Put("/", h.UpdateClientHandler)
+		router.Put("/archive", h.BatchArchiveClientsHandler)
 		router.Delete("/", h.DeleteClientHandler)
 	})
 }
@@ -92,5 +103,24 @@ func loadPayoutRoutes(router chi.Router, h *handlers.Handler) {
 
 // Attaches all event type related handlers to chi router
 func loadEventTypeRoutes (router chi.Router, h *handlers.Handler) {
+	router.Group(func(router chi.Router) {
+		router.Use(custom_middleware.AuthJwt)
+		router.Post("/", h.CreateEventTypeHandler)
+		router.Get("/", h.GetEventTypeHandler)
+		router.Put("/", h.UpdateEventTypeHandler)
+		router.Delete("/", h.DeleteEventTypeHandler)
+	})
+}
 
+// Attaches all global middleware, intended for the main router
+func attachMiddleware (router chi.Router) {
+	// Logging
+	router.Use(middleware.Logger)
+	// CORS
+	router.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{"http://localhost:5173"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		AllowCredentials: true,
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+	}))
 }
