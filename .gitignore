@@ -1,6 +1,5 @@
 .env*
 .DS_STORE
 tmp/
-Dockerfile*
 docker-*
 .vscode
