@@ -16,10 +16,13 @@ func main() {
 
 	ctx := context.Background()
 
-	// load .env
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
+	// load .env if in development
+	prodEnv := os.Getenv("PROD")
+	if prodEnv != "true" {
+		err := godotenv.Load()
+		if err != nil {
+			log.Fatal("Error loading .env file")
+		}
 	}
 
 	dbUser := os.Getenv("DB_USER")
@@ -30,6 +33,7 @@ func main() {
 	}
 
 	var conn *pgx.Conn
+	var err error
 
 	// if we are running in docker, we need to use the docker host
 	if os.Getenv("DOCKER") == "true" {
