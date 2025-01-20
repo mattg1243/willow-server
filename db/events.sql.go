@@ -14,9 +14,9 @@ import (
 
 const createEvent = `-- name: CreateEvent :one
 INSERT INTO events (
-    client_id, user_id, date, duration, event_type_id, detail, rate, amount, running_balance, id, created_at
+    client_id, user_id, date, duration, event_type_id, detail, rate, amount, running_balance, id, created_at, updated_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW()
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW()
 ) RETURNING id, user_id, client_id, date, duration, event_type_id, detail, rate, amount, running_balance, paid, created_at, updated_at
 `
 

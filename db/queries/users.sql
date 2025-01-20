@@ -1,8 +1,8 @@
 -- name: CreateUser :one
 INSERT INTO users (
-    id, fname, lname, email, "hash", nameforheader, license,  created_at, updated_at
+    id, fname, lname, email, "hash", nameforheader, license, rate, created_at, updated_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, NOW(), NOW()
+    $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()
 ) RETURNING
     id, 
     fname, 
@@ -21,6 +21,7 @@ SELECT
     email, 
     nameforheader, 
     license, 
+    rate,
     created_at, 
     updated_at 
 FROM users
@@ -41,9 +42,10 @@ SET
     lname = $2,
     nameForHeader = $3,
     license = $4,
+    rate = $5,
     updated_at = NOW()
 WHERE
-    id = $5
+    id = $6
 RETURNING 
     id, 
     fname, 
@@ -51,6 +53,7 @@ RETURNING
     email, 
     nameforheader, 
     license, 
+    rate,
     created_at, 
     updated_at;
 

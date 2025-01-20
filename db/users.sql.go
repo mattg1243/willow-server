@@ -14,9 +14,9 @@ import (
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
-    id, fname, lname, email, "hash", nameforheader, license,  created_at, updated_at
+    id, fname, lname, email, "hash", nameforheader, license, rate, created_at, updated_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, NOW(), NOW()
+    $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()
 ) RETURNING
     id, 
     fname, 
@@ -36,6 +36,7 @@ type CreateUserParams struct {
 	Hash          string      `json:"hash"`
 	Nameforheader string      `json:"nameforheader"`
 	License       pgtype.Text `json:"license"`
+	Rate          pgtype.Int4 `json:"rate"`
 }
 
 type CreateUserRow struct {
@@ -58,6 +59,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (CreateU
 		arg.Hash,
 		arg.Nameforheader,
 		arg.License,
+		arg.Rate,
 	)
 	var i CreateUserRow
 	err := row.Scan(
@@ -91,6 +93,7 @@ SELECT
     email, 
     nameforheader, 
     license, 
+    rate,
     created_at, 
     updated_at 
 FROM users
@@ -104,6 +107,7 @@ type GetUserRow struct {
 	Email         string           `json:"email"`
 	Nameforheader string           `json:"nameforheader"`
 	License       pgtype.Text      `json:"license"`
+	Rate          pgtype.Int4      `json:"rate"`
 	CreatedAt     pgtype.Timestamp `json:"created_at"`
 	UpdatedAt     pgtype.Timestamp `json:"updated_at"`
 }
@@ -118,6 +122,7 @@ func (q *Queries) GetUser(ctx context.Context, id uuid.UUID) (GetUserRow, error)
 		&i.Email,
 		&i.Nameforheader,
 		&i.License,
+		&i.Rate,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -125,7 +130,7 @@ func (q *Queries) GetUser(ctx context.Context, id uuid.UUID) (GetUserRow, error)
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, fname, lname, email, hash, nameforheader, license, created_at, updated_at FROM users
+SELECT id, fname, lname, email, hash, nameforheader, license, created_at, updated_at, rate FROM users
 WHERE email = $1
 `
 
@@ -142,6 +147,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.License,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Rate,
 	)
 	return i, err
 }
@@ -165,9 +171,10 @@ SET
     lname = $2,
     nameForHeader = $3,
     license = $4,
+    rate = $5,
     updated_at = NOW()
 WHERE
-    id = $5
+    id = $6
 RETURNING 
     id, 
     fname, 
@@ -175,6 +182,7 @@ RETURNING
     email, 
     nameforheader, 
     license, 
+    rate,
     created_at, 
     updated_at
 `
@@ -184,6 +192,7 @@ type UpdateUserParams struct {
 	Lname         string      `json:"lname"`
 	Nameforheader string      `json:"nameforheader"`
 	License       pgtype.Text `json:"license"`
+	Rate          pgtype.Int4 `json:"rate"`
 	ID            uuid.UUID   `json:"id"`
 }
 
@@ -194,6 +203,7 @@ type UpdateUserRow struct {
 	Email         string           `json:"email"`
 	Nameforheader string           `json:"nameforheader"`
 	License       pgtype.Text      `json:"license"`
+	Rate          pgtype.Int4      `json:"rate"`
 	CreatedAt     pgtype.Timestamp `json:"created_at"`
 	UpdatedAt     pgtype.Timestamp `json:"updated_at"`
 }
@@ -204,6 +214,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateU
 		arg.Lname,
 		arg.Nameforheader,
 		arg.License,
+		arg.Rate,
 		arg.ID,
 	)
 	var i UpdateUserRow
@@ -214,6 +225,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateU
 		&i.Email,
 		&i.Nameforheader,
 		&i.License,
+		&i.Rate,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

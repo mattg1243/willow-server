@@ -81,7 +81,7 @@ func (q *Queries) GetEventType(ctx context.Context, id uuid.UUID) (EventType, er
 const getEventTypes = `-- name: GetEventTypes :many
 SELECT id, user_id, source, title, charge, created_at, updated_at
 FROM event_types
-WHERE user_id = $1
+WHERE user_id = $1 OR user_id IS NULL
 `
 
 func (q *Queries) GetEventTypes(ctx context.Context, userID pgtype.UUID) ([]EventType, error) {

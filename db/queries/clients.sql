@@ -30,6 +30,9 @@ SET
 WHERE
     id = $1;
 
+-- name: UpdateClientBalance :exec
+UPDATE clients SET balance = $2 WHERE id = $1;
+
 -- name: DeleteClient :exec
 DELETE FROM clients
 WHERE id = ANY($1::uuid[]);

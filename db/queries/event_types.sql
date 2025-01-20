@@ -13,7 +13,7 @@ WHERE id = $1;
 -- name: GetEventTypes :many
 SELECT *
 FROM event_types
-WHERE user_id = $1;
+WHERE user_id = $1 OR user_id IS NULL;
 
 -- name: UpdateEventType :one
 UPDATE event_types

@@ -32,9 +32,9 @@ func (h *Handler) CreateEventTypeHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	newEventType, err := h.queries.CreateEventType(r.Context(), db.CreateEventTypeParams{
-		ID: uuid.New(),
-		Title: eventType.Title,
-		UserID: pgtype.UUID{ Bytes: userID, Valid: true},
+		ID:     uuid.New(),
+		Title:  eventType.Title,
+		UserID: pgtype.UUID{Bytes: userID, Valid: true},
 		Charge: eventType.Charge,
 	})
 
@@ -79,7 +79,7 @@ func (h *Handler) GetEventTypeHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		eventTypes, err := h.queries.GetEventTypes(r.Context(), pgtype.UUID{ Bytes: userID, Valid: true })
+		eventTypes, err := h.queries.GetEventTypes(r.Context(), pgtype.UUID{Bytes: userID, Valid: true})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -104,8 +104,8 @@ func (h *Handler) UpdateEventTypeHandler(w http.ResponseWriter, r *http.Request)
 	updateEventType, err := h.queries.UpdateEventType(
 		r.Context(),
 		db.UpdateEventTypeParams{
-			ID: eventType.ID,
-			Title: eventType.Title,
+			ID:     eventType.ID,
+			Title:  eventType.Title,
 			Charge: eventType.Charge,
 		},
 	)
@@ -135,7 +135,7 @@ func (h *Handler) DeleteEventTypeHandler(w http.ResponseWriter, r *http.Request)
 
 	// Set all events that reference this type to Misc
 	err = h.queries.SetEventsToMiscType(r.Context(), db.SetEventsToMiscTypeParams{
-		EventTypeID: eventTypeID,
+		EventTypeID:   eventTypeID,
 		EventTypeID_2: miscID,
 	})
 	if err != nil {

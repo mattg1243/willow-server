@@ -16,7 +16,7 @@ func (h *Handler) CreateEventHandler(w http.ResponseWriter, r *http.Request) {
 	event := db.Event{}
 
 	userIDStr := custom_middleware.GetUserFromContext(r)
-	userID, err := uuid.Parse(userIDStr) 
+	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
@@ -27,20 +27,20 @@ func (h *Handler) CreateEventHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	newEvent, err := h.queries.CreateEvent(r.Context(), db.CreateEventParams{
-		ClientID:   		event.ClientID,
-		UserID: 				userID,
-		ID: 						uuid.New(),
-		Date:       		event.Date,
-		Duration:   		event.Duration,
-		EventTypeID:		event.EventTypeID,
-		Detail:     		event.Detail,
-		Rate:       		event.Rate,
-		Amount:     		event.Amount,
-		RunningBalance:	0,
+		ClientID:       event.ClientID,
+		UserID:         userID,
+		ID:             uuid.New(),
+		Date:           event.Date,
+		Duration:       event.Duration,
+		EventTypeID:    event.EventTypeID,
+		Detail:         event.Detail,
+		Rate:           event.Rate,
+		Amount:         event.Amount,
+		RunningBalance: 0,
 	})
 
 	if err != nil {
-		log.Fatalf("error saving event")
+		log.Fatalf("error saving event: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -57,7 +57,7 @@ func (h *Handler) CreateEventHandler(w http.ResponseWriter, r *http.Request) {
 	// save to db
 	for i := 0; i < len(allEvents); i++ {
 		err := h.queries.UpdateRunningBalance(
-			r.Context(), 
+			r.Context(),
 			db.UpdateRunningBalanceParams{ID: allEvents[i].ID, RunningBalance: int32(runningBalances[i])},
 		)
 		if err != nil {
@@ -66,13 +66,24 @@ func (h *Handler) CreateEventHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// update users balance to the value of the most recent events running balance value
+	newClientBalance := runningBalances[len(runningBalances)-1]
+
+	err = h.queries.UpdateClientBalance(
+		r.Context(),
+		db.UpdateClientBalanceParams{
+			ID:      event.ClientID,
+			Balance: int32(newClientBalance),
+		},
+	)
+
 	if err := json.NewEncoder(w).Encode(newEvent); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
 
-func (h *Handler) GetEventHandler (w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetEventHandler(w http.ResponseWriter, r *http.Request) {
 	eventIDQuery := r.URL.Query().Get("id")
 	clientIDQuery := r.URL.Query().Get("clientId")
 	payoutIDQuery := r.URL.Query().Get("payoutId")
@@ -153,13 +164,14 @@ func (h *Handler) UpdateEventHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	updatedEvent, err := h.queries.UpdateEvent(r.Context(), db.UpdateEventParams{
-		ID: 						event.ID,
-		Date:       		event.Date,
-		Duration:   		event.Duration,
-		EventTypeID:		event.EventTypeID,
-		Detail:     		event.Detail,
-		Rate:       		event.Rate,
-		Amount:     		event.Amount,
+		ID:          event.ID,
+		Date:        event.Date,
+		Duration:    event.Duration,
+		EventTypeID: event.EventTypeID,
+		Detail:      event.Detail,
+		Rate:        event.Rate,
+		Amount:      event.Amount,
+		Paid:        event.Paid,
 	})
 
 	if err != nil {
@@ -179,7 +191,7 @@ func (h *Handler) UpdateEventHandler(w http.ResponseWriter, r *http.Request) {
 	// save to db
 	for i := 0; i < len(allEvents); i++ {
 		err := h.queries.UpdateRunningBalance(
-			r.Context(), 
+			r.Context(),
 			db.UpdateRunningBalanceParams{ID: allEvents[i].ID, RunningBalance: int32(runningBalances[i])},
 		)
 		if err != nil {
@@ -187,6 +199,16 @@ func (h *Handler) UpdateEventHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+
+	// update client balance
+	newClientBalance := runningBalances[len(runningBalances)-1]
+	err = h.queries.UpdateClientBalance(
+		r.Context(),
+		db.UpdateClientBalanceParams{
+			ID:      event.ClientID,
+			Balance: int32(newClientBalance),
+		},
+	)
 
 	if err := json.NewEncoder(w).Encode(updatedEvent); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -197,8 +219,14 @@ func (h *Handler) UpdateEventHandler(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) DeleteEventHandler(w http.ResponseWriter, r *http.Request) {
 	eventIDsStr := r.URL.Query()["id"]
+	clientIDStr := r.URL.Query().Get("client")
 	if len(eventIDsStr) == 0 {
 		http.Error(w, "No event id provided", http.StatusBadRequest)
+		return
+	}
+
+	if len(clientIDStr) == 0 {
+		http.Error(w, "No client id provided", http.StatusBadRequest)
 		return
 	}
 
@@ -212,11 +240,53 @@ func (h *Handler) DeleteEventHandler(w http.ResponseWriter, r *http.Request) {
 		eventIDs[i] = id
 	}
 
-	err := h.queries.DeleteEvents(r.Context(), eventIDs)
+	clientID, err := uuid.Parse(clientIDStr)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = h.queries.DeleteEvents(r.Context(), eventIDs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	// TODO implement this
+	// update balances
+	allEvents, err := h.queries.GetEvents(r.Context(), clientID)
+	if err != nil {
+		log.Fatalf("error getting events")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	runningBalances := core.RecalcRunningBalances(allEvents)
+	// save to db
+	for i := 0; i < len(allEvents); i++ {
+		err := h.queries.UpdateRunningBalance(
+			r.Context(),
+			db.UpdateRunningBalanceParams{ID: allEvents[i].ID, RunningBalance: int32(runningBalances[i])},
+		)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// update client balance
+	var newBalance int
+	if len(allEvents) == 0 {
+		newBalance = 0
+	} else {
+		newBalance = runningBalances[len(runningBalances)-1]
+	}
+	err = h.queries.UpdateClientBalance(
+		r.Context(),
+		db.UpdateClientBalanceParams{
+			ID:      clientID,
+			Balance: int32(newBalance),
+		},
+	)
 
 	w.WriteHeader(http.StatusOK)
 }

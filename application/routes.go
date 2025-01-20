@@ -79,7 +79,7 @@ func loadClientRoutes(router chi.Router, h *handlers.Handler) {
 }
 
 // Attaches all event related handlers to chi router
-func loadEventRoutes(router chi.Router, h *handlers.Handler){
+func loadEventRoutes(router chi.Router, h *handlers.Handler) {
 	router.Group(func(router chi.Router) {
 		router.Use(custom_middleware.AuthJwt)
 		router.Post("/", h.CreateEventHandler)
@@ -88,7 +88,6 @@ func loadEventRoutes(router chi.Router, h *handlers.Handler){
 		router.Delete("/", h.DeleteEventHandler)
 	})
 }
-
 
 func loadPayoutRoutes(router chi.Router, h *handlers.Handler) {
 	router.Group(func(router chi.Router) {
@@ -102,7 +101,7 @@ func loadPayoutRoutes(router chi.Router, h *handlers.Handler) {
 }
 
 // Attaches all event type related handlers to chi router
-func loadEventTypeRoutes (router chi.Router, h *handlers.Handler) {
+func loadEventTypeRoutes(router chi.Router, h *handlers.Handler) {
 	router.Group(func(router chi.Router) {
 		router.Use(custom_middleware.AuthJwt)
 		router.Post("/", h.CreateEventTypeHandler)
@@ -113,14 +112,14 @@ func loadEventTypeRoutes (router chi.Router, h *handlers.Handler) {
 }
 
 // Attaches all global middleware, intended for the main router
-func attachMiddleware (router chi.Router) {
+func attachMiddleware(router chi.Router) {
 	// Logging
 	router.Use(middleware.Logger)
 	// CORS
 	router.Use(cors.Handler(cors.Options{
-		AllowedOrigins: []string{"http://localhost:5173"},
+		AllowedOrigins:   []string{"http://localhost:5173", "http://localhost:6006"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		AllowCredentials: true,
-		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 	}))
 }

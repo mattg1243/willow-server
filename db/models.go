@@ -75,6 +75,7 @@ type User struct {
 	License       pgtype.Text      `json:"license"`
 	CreatedAt     pgtype.Timestamp `json:"created_at"`
 	UpdatedAt     pgtype.Timestamp `json:"updated_at"`
+	Rate          pgtype.Int4      `json:"rate"`
 }
 
 type UserContactInfo struct {

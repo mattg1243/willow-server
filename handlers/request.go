@@ -34,13 +34,14 @@ type createUserRequest struct {
 		Email    string `json:"email" validate:"required,email"`
 		Fname    string `json:"fname" validate:"required"`
 		Lname    string `json:"lname" validate:"required"`
+		Rate     int32  `json:"rate"`
 	} `json:"user"`
 	ContactInfo struct {
-		Phone string `json:"phone"`
-		City string `json:"city"`
-		State string `json:"state"`
+		Phone  string `json:"phone"`
+		City   string `json:"city"`
+		State  string `json:"state"`
 		Street string `json:"street"`
-		Zip string `json:"zip"`
+		Zip    string `json:"zip"`
 	} `json:"contactInfo"`
 }
 
@@ -57,6 +58,7 @@ func (r *createUserRequest) bind(req *http.Request, u *db.User, cI *db.UserConta
 	u.Fname = r.User.Fname
 	u.Lname = r.User.Lname
 	u.Email = r.User.Email
+	u.Rate = pgtype.Int4{Int32: r.User.Rate, Valid: false}
 	// hash password
 	h, err := u.HashPassword(r.User.Password)
 	if err != nil {
@@ -75,19 +77,20 @@ func (r *createUserRequest) bind(req *http.Request, u *db.User, cI *db.UserConta
 
 type updateUserRequest struct {
 	User struct {
-		Fname    string `json:"fname" validate:"required"`
-		Lname    string `json:"lname" validate:"required"`
-		License	 string `json:"license" validate:"required"`
+		Fname         string `json:"fname" validate:"required"`
+		Lname         string `json:"lname" validate:"required"`
+		License       string `json:"license" validate:"required"`
+		Rate          int32  `json:"rate"`
 		Nameforheader string `json:"nameForHeader" validate:"required"`
 	} `json:"user"`
 	ContactInfo struct {
-		Phone string `json:"phone" validate:"required"`
-		City string `json:"city" validate:"required"`
-		State string `json:"state" validate:"required"`
-		Street string `json:"street" validate:"required"`
-		Zip string `json:"zip" validate:"required"`
+		Phone       string `json:"phone" validate:"required"`
+		City        string `json:"city" validate:"required"`
+		State       string `json:"state" validate:"required"`
+		Street      string `json:"street" validate:"required"`
+		Zip         string `json:"zip" validate:"required"`
 		PaymentInfo struct {
-			Venmo string `json:"venmo"`
+			Venmo  string `json:"venmo"`
 			Paypal string `json:"paypal"`
 		} `json:"paymentInfo"`
 	} `json:"contactInfo"`
@@ -106,6 +109,7 @@ func (r *updateUserRequest) bind(req *http.Request, u *db.User, cI *db.UserConta
 	u.Lname = r.User.Lname
 	u.Nameforheader = r.User.Nameforheader
 	u.License = pgtype.Text{String: r.User.License, Valid: true}
+	u.Rate = pgtype.Int4{Int32: r.User.Rate, Valid: true}
 	// bind contact info
 	cI.Phone = pgtype.Text{String: r.ContactInfo.Phone, Valid: true}
 	cI.City = pgtype.Text{String: r.ContactInfo.City, Valid: true}
@@ -117,7 +121,6 @@ func (r *updateUserRequest) bind(req *http.Request, u *db.User, cI *db.UserConta
 		return err
 	}
 	cI.Paymentinfo = paymentInfo
-
 
 	return nil
 }
@@ -140,9 +143,9 @@ func (r *loginUserRequest) bind(req *http.Request, v *Validator) error {
 }
 
 type payoutRequest struct {
-	Payout 		int 					`json:"payout"`
-	Events 		[]uuid.UUID		`json:"events"`
-	ClientID  uuid.UUID 		`json:"client_id"`
+	Payout   int         `json:"payout"`
+	Events   []uuid.UUID `json:"events"`
+	ClientID uuid.UUID   `json:"client_id"`
 }
 
 func (r *payoutRequest) bind(req *http.Request, v *Validator) error {
@@ -153,7 +156,7 @@ func (r *payoutRequest) bind(req *http.Request, v *Validator) error {
 	if err := v.Validate(r); err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -190,15 +193,15 @@ func (r *createClientRequest) bind(req *http.Request, cl *db.Client, v *Validato
 
 type updateClientRequest struct {
 	Client struct {
-		ID										 uuid.UUID	`json:"id"`
-		Fname                  string 		`json:"fname"`
-		Lname                  string 		`json:"lname"`
-		Email                  string 		`json:"email"`
-		Phone									 string 		`json:"phone"`
-		Balance                int32  		`json:"balance"`
-		Balancenotifythreshold int32  		`json:"balancenotifythreshold"`
-		Rate                   int32  		`json:"rate"`
-		Isarchived             bool   		`json:"isArchived"`
+		ID                     uuid.UUID `json:"id"`
+		Fname                  string    `json:"fname"`
+		Lname                  string    `json:"lname"`
+		Email                  string    `json:"email"`
+		Phone                  string    `json:"phone"`
+		Balance                int32     `json:"balance"`
+		Balancenotifythreshold int32     `json:"balancenotifythreshold"`
+		Rate                   int32     `json:"rate"`
+		Isarchived             bool      `json:"isArchived"`
 	}
 }
 
@@ -226,13 +229,13 @@ func (r *updateClientRequest) bind(req *http.Request, cl *db.Client, v *Validato
 // event requests
 type createEventRequest struct {
 	Event struct {
-		ClientID   	uuid.UUID `json:"client_id" validate:"required"`
-		Date       	string    `json:"date" validate:"required"`
-		Duration   	float64   `json:"duration" validate:"required"`
-		EventTypeID	uuid.UUID `json:"event_type_id" validate:"required"`
-		Detail     	string    `json:"detail"`
-		Rate       	int32     `json:"rate"`
-		Amount     	float64   `json:"amount"`
+		ClientID    uuid.UUID `json:"client_id" validate:"required"`
+		Date        string    `json:"date" validate:"required"`
+		Duration    float64   `json:"duration"`
+		EventTypeID uuid.UUID `json:"event_type_id" validate:"required"`
+		Detail      string    `json:"detail"`
+		Rate        int32     `json:"rate"`
+		Amount      float64   `json:"amount"`
 	} `json:"event"`
 }
 
@@ -253,8 +256,8 @@ func (r *createEventRequest) bind(req *http.Request, e *db.Event, v *Validator) 
 		return err
 	}
 
-	timeLayout := "2006-01-02 15:04:05"
-	timeStr, err := time.Parse(timeLayout, r.Event.Date)
+	// ISO string format
+	timeStr, err := time.Parse(time.RFC3339, r.Event.Date)
 	if err != nil {
 		fmt.Println("error parsing time: ", err)
 		return err
@@ -273,14 +276,15 @@ func (r *createEventRequest) bind(req *http.Request, e *db.Event, v *Validator) 
 
 type updateEventRequest struct {
 	Event struct {
-		ID 					uuid.UUID `json:"id" validate:"required"`
-		ClientID		uuid.UUID `json:"client_id" validate:"required"`
-		Date       	string    `json:"date" validate:"required"`
-		Duration   	float64   `json:"duration" validate:"required"`
-		EventTypeID	uuid.UUID `json:"event_type_id" validate:"required"`
-		Detail     	string    `json:"detail"`
-		Rate       	int32     `json:"rate"`
-		Amount     	float64   `json:"amount"`
+		ID          uuid.UUID `json:"id" validate:"required"`
+		ClientID    uuid.UUID `json:"client_id" validate:"required"`
+		Date        string    `json:"date" validate:"required"`
+		Duration    float64   `json:"duration"`
+		EventTypeID uuid.UUID `json:"event_type_id" validate:"required"`
+		Detail      string    `json:"detail"`
+		Rate        int32     `json:"rate"`
+		Amount      float64   `json:"amount"`
+		Paid        bool      `json:"paid"`
 	} `json:"event"`
 }
 
@@ -293,8 +297,8 @@ func (r *updateEventRequest) bind(req *http.Request, e *db.Event, v *Validator) 
 		return err
 	}
 
-	timeLayout := "2006-01-02 15:04:05"
-	timeStr, err := time.Parse(timeLayout, r.Event.Date)
+	// ISO string format
+	timeStr, err := time.Parse(time.RFC3339, r.Event.Date)
 	if err != nil {
 		fmt.Println("error parsing time: ", err)
 		return err
@@ -308,6 +312,7 @@ func (r *updateEventRequest) bind(req *http.Request, e *db.Event, v *Validator) 
 	e.Detail = pgtype.Text{String: r.Event.Detail, Valid: true}
 	e.Rate = r.Event.Rate
 	e.Amount = int32(r.Event.Amount)
+	e.Paid = pgtype.Bool{Bool: r.Event.Paid, Valid: true}
 
 	return nil
 }
@@ -315,16 +320,16 @@ func (r *updateEventRequest) bind(req *http.Request, e *db.Event, v *Validator) 
 // event type requests
 type createEventTypeRequest struct {
 	EventType struct {
-		Title 		string 	`json:"title" validate:"required"`
-		Charge 	bool 		`json:"charge" validate:"required"`
+		Title  string `json:"title" validate:"required"`
+		Charge bool   `json:"charge" validate:"required"`
 	} `json:"eventType" validate:"required"`
 }
 
-func (r* createEventTypeRequest) bind(req *http.Request, et *db.EventType, v *Validator) error {
+func (r *createEventTypeRequest) bind(req *http.Request, et *db.EventType, v *Validator) error {
 	if err := baseBind(req, r); err != nil {
 		return err
 	}
-	
+
 	if err := v.Validate(r); err != nil {
 		return err
 	}
@@ -337,24 +342,24 @@ func (r* createEventTypeRequest) bind(req *http.Request, et *db.EventType, v *Va
 
 type updateEventTypeRequest struct {
 	EventType struct {
-		ID 			uuid.UUID 	`json:"id" validate:"required"`
-		Title 		string 			`json:"title" validate:"required"`
-		Charge 	bool 				`json:"charge" validate:"required"`
+		ID     uuid.UUID `json:"id" validate:"required"`
+		Title  string    `json:"title" validate:"required"`
+		Charge bool      `json:"charge" validate:"required"`
 	} `json:"eventType" validate:"required"`
 }
 
-func (r* updateEventTypeRequest) bind (req *http.Request, et *db.EventType, v *Validator) error {
+func (r *updateEventTypeRequest) bind(req *http.Request, et *db.EventType, v *Validator) error {
 	if err := baseBind(req, r); err != nil {
 		return err
 	}
-	
+
 	if err := v.Validate(r); err != nil {
-			return err
-		}
-		// Bind
-		et.ID = r.EventType.ID
-		et.Charge = r.EventType.Charge
-		et.Title = r.EventType.Title
-	
-		return nil
+		return err
+	}
+	// Bind
+	et.ID = r.EventType.ID
+	et.Charge = r.EventType.Charge
+	et.Title = r.EventType.Title
+
+	return nil
 }

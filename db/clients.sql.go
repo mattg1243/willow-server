@@ -190,3 +190,17 @@ func (q *Queries) UpdateClient(ctx context.Context, arg UpdateClientParams) erro
 	)
 	return err
 }
+
+const updateClientBalance = `-- name: UpdateClientBalance :exec
+UPDATE clients SET balance = $2 WHERE id = $1
+`
+
+type UpdateClientBalanceParams struct {
+	ID      uuid.UUID `json:"id"`
+	Balance int32     `json:"balance"`
+}
+
+func (q *Queries) UpdateClientBalance(ctx context.Context, arg UpdateClientBalanceParams) error {
+	_, err := q.db.Exec(ctx, updateClientBalance, arg.ID, arg.Balance)
+	return err
+}

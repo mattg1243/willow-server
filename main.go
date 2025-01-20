@@ -6,9 +6,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/mattg1243/willow-server/application"
+	"github.com/mattg1243/willow-server/db"
 	"github.com/mattg1243/willow-server/handlers"
 )
 
@@ -35,16 +36,23 @@ func main() {
 		clientHost = "http://localhost:3000"
 	}
 
-	// connect to db
-	conn, err := pgx.Connect(ctx, dbUrl)
+	// run db migrations
+	db.RunMigrations(dbUrl)
+
+	// initialize conn pool
+	poolConfig, err := pgxpool.ParseConfig(dbUrl)
 	if err != nil {
-		log.Fatalf("An error occured:\n%s", err)
-		return
+		log.Fatalf("An error occured while creating conn pool config:\n%s", err)
 	}
 
-	defer conn.Close(ctx)
+	dbPool, err := pgxpool.NewWithConfig(ctx, poolConfig)
+	if err != nil {
+		log.Fatalf("An error occured while creating conn pool:\n%s", err)
+	}
 
-	handler := handlers.New(conn)
+	defer dbPool.Close()
+
+	handler := handlers.New(dbPool)
 
 	app := application.New(handler)
 	err = app.Start(ctx)
