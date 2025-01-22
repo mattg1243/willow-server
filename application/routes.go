@@ -2,6 +2,7 @@ package application
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -117,7 +118,7 @@ func attachMiddleware(router chi.Router) {
 	router.Use(middleware.Logger)
 	// CORS
 	router.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:5173", "http://localhost:6006"},
+		AllowedOrigins:   []string{"http://localhost:5173", "http://localhost:6006", os.Getenv("CLIENT_HOST")},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		AllowCredentials: true,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
