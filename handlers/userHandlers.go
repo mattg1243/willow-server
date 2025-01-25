@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,7 +18,7 @@ import (
 func (h *Handler) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 	userIdStr := custom_middleware.GetUserFromContext(r)
 	userId, err := uuid.Parse(userIdStr)
-	
+
 	if err != nil {
 		http.Error(w, "User not found with request", http.StatusUnauthorized)
 		return
@@ -28,7 +29,7 @@ func (h *Handler) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	
+
 	w.Header().Set("Content-Type", "application/json")
 
 	// Encode user as json and send to client
@@ -41,7 +42,7 @@ func (h *Handler) GetUserHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetUserContactInfo(w http.ResponseWriter, r *http.Request) {
 	userIdStr := custom_middleware.GetUserFromContext(r)
 	userId, err := uuid.Parse(userIdStr)
-	
+
 	if err != nil {
 		http.Error(w, "User not found with request", http.StatusUnauthorized)
 		return
@@ -76,22 +77,22 @@ func (h *Handler) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// save user
-	newUser, err := h.queries.CreateUser(r.Context(), db.CreateUserParams{ 
-		Hash: hash, 
-		Email: user.Email,
-		Fname: user.Fname,
-		Lname: user.Lname,
+	newUser, err := h.queries.CreateUser(r.Context(), db.CreateUserParams{
+		Hash:          hash,
+		Email:         user.Email,
+		Fname:         user.Fname,
+		Lname:         user.Lname,
 		Nameforheader: user.Nameforheader,
-		ID: uuid.New(),
+		ID:            uuid.New(),
 	})
-	
+
 	if err != nil {
 		// Check if it's a Postgres error
 		if pgErr, ok := err.(*pgconn.PgError); ok {
 			// Check if it's a unique violation error
 			if pgErr.Code == pgerrcode.UniqueViolation {
 				http.Error(w, "User already exists", http.StatusBadRequest)
-				return	
+				return
 			}
 		}
 		// Return a generic error for any other cases
@@ -100,12 +101,12 @@ func (h *Handler) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// save contact info
 	_, err = h.queries.CreateUserContactInfo(r.Context(), db.CreateUserContactInfoParams{
-		ID: uuid.New(),
-		Phone: contactInfo.Phone,
-		City: contactInfo.City,
-		State: contactInfo.State,
+		ID:     uuid.New(),
+		Phone:  contactInfo.Phone,
+		City:   contactInfo.City,
+		State:  contactInfo.State,
 		Street: contactInfo.Street,
-		Zip: contactInfo.Zip,
+		Zip:    contactInfo.Zip,
 		UserID: newUser.ID,
 	})
 	if err != nil {
@@ -120,7 +121,7 @@ func (h *Handler) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) UpdateUserHandler(w http.ResponseWriter, r *http.Request)  {
+func (h *Handler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 	var user db.User
 	var contactInfo db.UserContactInfo
 	req := &updateUserRequest{}
@@ -139,11 +140,11 @@ func (h *Handler) UpdateUserHandler(w http.ResponseWriter, r *http.Request)  {
 	}
 	// save user
 	updatedUser, err := h.queries.UpdateUser(r.Context(), db.UpdateUserParams{
-		Fname: user.Fname,
-		Lname: user.Lname,
+		Fname:         user.Fname,
+		Lname:         user.Lname,
 		Nameforheader: user.Nameforheader,
-		License: user.License,
-		ID: userId,
+		License:       user.License,
+		ID:            userId,
 	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -151,15 +152,15 @@ func (h *Handler) UpdateUserHandler(w http.ResponseWriter, r *http.Request)  {
 	}
 	// save contact info
 	_, err = h.queries.UpdateUserContactInfo(r.Context(), db.UpdateUserContactInfoParams{
-		UserID: userId,
-		Phone: contactInfo.Phone,
-		City: contactInfo.City,
-		State: contactInfo.State,
-		Street: contactInfo.Street,
-		Zip: contactInfo.Zip,
+		UserID:      userId,
+		Phone:       contactInfo.Phone,
+		City:        contactInfo.City,
+		State:       contactInfo.State,
+		Street:      contactInfo.Street,
+		Zip:         contactInfo.Zip,
 		Paymentinfo: contactInfo.Paymentinfo,
 	})
-	
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -220,12 +221,12 @@ func (h *Handler) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		// Create and set cookie
 		cookie := &http.Cookie{
-			Name: "willow-access-token",
-			Value: jwt,
+			Name:     "willow-access-token",
+			Value:    jwt,
 			Expires:  time.Now().Add((time.Hour * 72)),
-			HttpOnly: false,
-			Secure:   false, //TODO change to true for production
-			Path: "/",
+			HttpOnly: os.Getenv("PROD") == "true", //TODO change to true for production
+			Secure:   os.Getenv("PROD") == "true", //TODO change to true for production
+			Path:     "/",
 			SameSite: http.SameSiteLaxMode,
 		}
 
@@ -237,4 +238,21 @@ func (h *Handler) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid login credentials.", http.StatusUnauthorized)
 		return
 	}
+}
+
+func (h *Handler) LogoutUserHandler(w http.ResponseWriter, r *http.Request) {
+
+	cookie := &http.Cookie{
+		Name:     "willow-access-token",
+		Value:    "",
+		Expires:  time.Now().Add(-1 * time.Hour),
+		HttpOnly: os.Getenv("PROD") == "true", // TODO: Set to true in production
+		Secure:   os.Getenv("PROD") == "true", // TODO: Set to true in production
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode,
+	}
+
+	http.SetCookie(w, cookie)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Successfully logged out"))
 }

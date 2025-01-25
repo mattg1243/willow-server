@@ -54,6 +54,7 @@ func loadAuthRoutes(router chi.Router, h *handlers.Handler) {
 	router.Group(func(router chi.Router) {
 		router.Post("/register", h.CreateUserHandler)
 		router.Post("/login", h.LoginUserHandler)
+		router.Post("/logout", h.LogoutUserHandler)
 	})
 }
 
