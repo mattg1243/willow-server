@@ -150,8 +150,16 @@ SELECT
 FROM events e
 INNER JOIN event_types et ON e.event_type_id = et.id
 WHERE e.client_id = $1 or e.user_id = $1
+    AND ($2::timestamptz IS NULL OR e.date >= $2::timestamptz)
+    AND ($3::timestamptz IS NULL OR e.date <= $3::timestamptz)
 ORDER BY e.date ASC
 `
+
+type GetEventsParams struct {
+	ClientID uuid.UUID          `json:"client_id"`
+	Column2  pgtype.Timestamptz `json:"column_2"`
+	Column3  pgtype.Timestamptz `json:"column_3"`
+}
 
 type GetEventsRow struct {
 	ID             uuid.UUID          `json:"id"`
@@ -169,8 +177,8 @@ type GetEventsRow struct {
 	Charge         bool               `json:"charge"`
 }
 
-func (q *Queries) GetEvents(ctx context.Context, clientID uuid.UUID) ([]GetEventsRow, error) {
-	rows, err := q.db.Query(ctx, getEvents, clientID)
+func (q *Queries) GetEvents(ctx context.Context, arg GetEventsParams) ([]GetEventsRow, error) {
+	rows, err := q.db.Query(ctx, getEvents, arg.ClientID, arg.Column2, arg.Column3)
 	if err != nil {
 		return nil, err
 	}

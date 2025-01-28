@@ -42,6 +42,8 @@ SELECT
 FROM events e
 INNER JOIN event_types et ON e.event_type_id = et.id
 WHERE e.client_id = $1 or e.user_id = $1
+    AND ($2::timestamptz IS NULL OR e.date >= $2::timestamptz)
+    AND ($3::timestamptz IS NULL OR e.date <= $3::timestamptz)
 ORDER BY e.date ASC;
 
 -- name: SetEventsToMiscType :exec

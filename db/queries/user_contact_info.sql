@@ -18,7 +18,7 @@ SET
   street = $4,
   zip = $5,
   paymentInfo = $6,
-  update_at = NOW()
+  updated_at = NOW()
 WHERE
   user_id = $7
 RETURNING *;

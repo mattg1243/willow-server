@@ -78,17 +78,17 @@ func (r *createUserRequest) bind(req *http.Request, u *db.User, cI *db.UserConta
 type updateUserRequest struct {
 	User struct {
 		Fname         string `json:"fname" validate:"required"`
-		Lname         string `json:"lname" validate:"required"`
-		License       string `json:"license" validate:"required"`
+		Lname         string `json:"lname"`
+		License       string `json:"license"`
 		Rate          int32  `json:"rate"`
-		Nameforheader string `json:"nameForHeader" validate:"required"`
+		Nameforheader string `json:"nameForHeader"`
 	} `json:"user"`
 	ContactInfo struct {
-		Phone       string `json:"phone" validate:"required"`
-		City        string `json:"city" validate:"required"`
-		State       string `json:"state" validate:"required"`
-		Street      string `json:"street" validate:"required"`
-		Zip         string `json:"zip" validate:"required"`
+		Phone       string `json:"phone"`
+		City        string `json:"city"`
+		State       string `json:"state"`
+		Street      string `json:"street"`
+		Zip         string `json:"zip"`
 		PaymentInfo struct {
 			Venmo  string `json:"venmo"`
 			Paypal string `json:"paypal"`
@@ -166,9 +166,9 @@ type createClientRequest struct {
 		Fname                  string `json:"fname" validate:"required"`
 		Lname                  string `json:"lname"`
 		Email                  string `json:"email"`
-		Rate                   int16  `json:"rate" validate:"required"`
+		Rate                   int32  `json:"rate" validate:"required"`
 		Phone                  string `json:"phone"`
-		Balancenotifythreshold int16  `json:"balanceNotifyThreshold"`
+		Balancenotifythreshold int32  `json:"balanceNotifyThreshold"`
 	} `json:"client"`
 }
 

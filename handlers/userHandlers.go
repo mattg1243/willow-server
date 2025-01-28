@@ -144,6 +144,7 @@ func (h *Handler) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 		Lname:         user.Lname,
 		Nameforheader: user.Nameforheader,
 		License:       user.License,
+		Rate:          user.Rate,
 		ID:            userId,
 	})
 	if err != nil {

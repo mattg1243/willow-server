@@ -3,6 +3,7 @@ package application
 import (
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -115,11 +116,14 @@ func loadEventTypeRoutes(router chi.Router, h *handlers.Handler) {
 
 // Attaches all global middleware, intended for the main router
 func attachMiddleware(router chi.Router) {
+	router.Use(middleware.Recoverer)
+	router.Use(middleware.Throttle(100))
+	router.Use(middleware.Timeout(30 * time.Second))
 	// Logging
 	router.Use(middleware.Logger)
 	// CORS
 	router.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:5173", "http://localhost:6006", os.Getenv("CLIENT_HOST")},
+		AllowedOrigins:   []string{"http://localhost:5173", "http://localhost:4173", "http://localhost:6006", os.Getenv("CLIENT_HOST")},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		AllowCredentials: true,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
