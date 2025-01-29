@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+	typeext "github.com/mattg1243/willow-server/typeext"
 )
 
 const createUserContactInfo = `-- name: CreateUserContactInfo :one
@@ -60,23 +61,42 @@ func (q *Queries) CreateUserContactInfo(ctx context.Context, arg CreateUserConta
 }
 
 const getUserContactInfo = `-- name: GetUserContactInfo :one
-SELECT id, user_id, phone, city, state, street, zip, paymentinfo, created_at, updated_at FROM user_contact_info WHERE user_id = $1
+SELECT 
+  phone,
+  city,
+  "state",
+  street,
+  zip,
+  paymentInfo::JSON,
+  updated_at,
+  created_at
+FROM user_contact_info 
+WHERE user_id = $1
 `
 
-func (q *Queries) GetUserContactInfo(ctx context.Context, userID uuid.UUID) (UserContactInfo, error) {
+type GetUserContactInfoRow struct {
+	Phone       pgtype.Text         `json:"phone"`
+	City        pgtype.Text         `json:"city"`
+	State       pgtype.Text         `json:"state"`
+	Street      pgtype.Text         `json:"street"`
+	Zip         pgtype.Text         `json:"zip"`
+	Paymentinfo typeext.PaymentInfo `json:"paymentinfo"`
+	UpdatedAt   pgtype.Timestamp    `json:"updated_at"`
+	CreatedAt   pgtype.Timestamp    `json:"created_at"`
+}
+
+func (q *Queries) GetUserContactInfo(ctx context.Context, userID uuid.UUID) (GetUserContactInfoRow, error) {
 	row := q.db.QueryRow(ctx, getUserContactInfo, userID)
-	var i UserContactInfo
+	var i GetUserContactInfoRow
 	err := row.Scan(
-		&i.ID,
-		&i.UserID,
 		&i.Phone,
 		&i.City,
 		&i.State,
 		&i.Street,
 		&i.Zip,
 		&i.Paymentinfo,
-		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.CreatedAt,
 	)
 	return i, err
 }

@@ -146,7 +146,7 @@ func (h *Handler) DeleteClientHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
+ 
 	w.Write([]byte("Client(s) deleted successfully"))
 }
 

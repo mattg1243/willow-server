@@ -17,11 +17,8 @@ sql:
               type: "UUID"
           - db_type: "integer"
             go_type: "int32"
-          - column: "users.paymentInfo"
+          - db_type: "json"  # ✅ Corrected column reference
             go_type:
-              import: "github.com/mattg1243/sqlc-fiber"
-              package: "db"
+              import: "github.com/mattg1243/willow-server/typeext"
+              package: "typeext"
               type: "PaymentInfo"
-
-          
-    

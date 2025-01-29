@@ -7,7 +7,17 @@ INSERT INTO user_contact_info (
 RETURNING *;
 
 -- name: GetUserContactInfo :one
-SELECT * FROM user_contact_info WHERE user_id = $1;
+SELECT 
+  phone,
+  city,
+  "state",
+  street,
+  zip,
+  paymentInfo::JSON,
+  updated_at,
+  created_at
+FROM user_contact_info 
+WHERE user_id = $1;
 
 -- name: UpdateUserContactInfo :one
 UPDATE user_contact_info 
