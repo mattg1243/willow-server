@@ -5,6 +5,8 @@
 package db
 
 import (
+	"encoding/json"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -86,7 +88,7 @@ type UserContactInfo struct {
 	State       pgtype.Text      `json:"state"`
 	Street      pgtype.Text      `json:"street"`
 	Zip         pgtype.Text      `json:"zip"`
-	Paymentinfo []byte           `json:"paymentinfo"`
+	Paymentinfo json.RawMessage  `json:"paymentinfo"`
 	CreatedAt   pgtype.Timestamp `json:"created_at"`
 	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
 }

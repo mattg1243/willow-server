@@ -1,8 +1,8 @@
 -- name: CreateUserContactInfo :one
 INSERT INTO user_contact_info (
-  id, user_id, phone, city, "state", street, zip, paymentInfo, created_at, updated_at
+  id, user_id, phone, city, "state", street, zip, created_at, updated_at
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()
+  $1, $2, $3, $4, $5, $6, $7, NOW(), NOW()
 )
 RETURNING *;
 
@@ -13,7 +13,7 @@ SELECT
   "state",
   street,
   zip,
-  paymentInfo::JSON,
+  paymentInfo::JSONB,
   updated_at,
   created_at
 FROM user_contact_info 

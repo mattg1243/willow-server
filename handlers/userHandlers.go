@@ -82,6 +82,7 @@ func (h *Handler) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 		Email:         user.Email,
 		Fname:         user.Fname,
 		Lname:         user.Lname,
+		Rate:          user.Rate,
 		Nameforheader: user.Nameforheader,
 		ID:            uuid.New(),
 	})

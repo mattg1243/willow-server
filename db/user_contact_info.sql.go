@@ -7,30 +7,29 @@ package db
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
-	typeext "github.com/mattg1243/willow-server/typeext"
 )
 
 const createUserContactInfo = `-- name: CreateUserContactInfo :one
 INSERT INTO user_contact_info (
-  id, user_id, phone, city, "state", street, zip, paymentInfo, created_at, updated_at
+  id, user_id, phone, city, "state", street, zip, created_at, updated_at
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW()
+  $1, $2, $3, $4, $5, $6, $7, NOW(), NOW()
 )
 RETURNING id, user_id, phone, city, state, street, zip, paymentinfo, created_at, updated_at
 `
 
 type CreateUserContactInfoParams struct {
-	ID          uuid.UUID   `json:"id"`
-	UserID      uuid.UUID   `json:"user_id"`
-	Phone       pgtype.Text `json:"phone"`
-	City        pgtype.Text `json:"city"`
-	State       pgtype.Text `json:"state"`
-	Street      pgtype.Text `json:"street"`
-	Zip         pgtype.Text `json:"zip"`
-	Paymentinfo []byte      `json:"paymentinfo"`
+	ID     uuid.UUID   `json:"id"`
+	UserID uuid.UUID   `json:"user_id"`
+	Phone  pgtype.Text `json:"phone"`
+	City   pgtype.Text `json:"city"`
+	State  pgtype.Text `json:"state"`
+	Street pgtype.Text `json:"street"`
+	Zip    pgtype.Text `json:"zip"`
 }
 
 func (q *Queries) CreateUserContactInfo(ctx context.Context, arg CreateUserContactInfoParams) (UserContactInfo, error) {
@@ -42,7 +41,6 @@ func (q *Queries) CreateUserContactInfo(ctx context.Context, arg CreateUserConta
 		arg.State,
 		arg.Street,
 		arg.Zip,
-		arg.Paymentinfo,
 	)
 	var i UserContactInfo
 	err := row.Scan(
@@ -67,7 +65,7 @@ SELECT
   "state",
   street,
   zip,
-  paymentInfo::JSON,
+  paymentInfo::JSONB,
   updated_at,
   created_at
 FROM user_contact_info 
@@ -75,14 +73,14 @@ WHERE user_id = $1
 `
 
 type GetUserContactInfoRow struct {
-	Phone       pgtype.Text         `json:"phone"`
-	City        pgtype.Text         `json:"city"`
-	State       pgtype.Text         `json:"state"`
-	Street      pgtype.Text         `json:"street"`
-	Zip         pgtype.Text         `json:"zip"`
-	Paymentinfo typeext.PaymentInfo `json:"paymentinfo"`
-	UpdatedAt   pgtype.Timestamp    `json:"updated_at"`
-	CreatedAt   pgtype.Timestamp    `json:"created_at"`
+	Phone       pgtype.Text      `json:"phone"`
+	City        pgtype.Text      `json:"city"`
+	State       pgtype.Text      `json:"state"`
+	Street      pgtype.Text      `json:"street"`
+	Zip         pgtype.Text      `json:"zip"`
+	Paymentinfo json.RawMessage  `json:"paymentinfo"`
+	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
+	CreatedAt   pgtype.Timestamp `json:"created_at"`
 }
 
 func (q *Queries) GetUserContactInfo(ctx context.Context, userID uuid.UUID) (GetUserContactInfoRow, error) {
@@ -117,13 +115,13 @@ RETURNING id, user_id, phone, city, state, street, zip, paymentinfo, created_at,
 `
 
 type UpdateUserContactInfoParams struct {
-	Phone       pgtype.Text `json:"phone"`
-	City        pgtype.Text `json:"city"`
-	State       pgtype.Text `json:"state"`
-	Street      pgtype.Text `json:"street"`
-	Zip         pgtype.Text `json:"zip"`
-	Paymentinfo []byte      `json:"paymentinfo"`
-	UserID      uuid.UUID   `json:"user_id"`
+	Phone       pgtype.Text     `json:"phone"`
+	City        pgtype.Text     `json:"city"`
+	State       pgtype.Text     `json:"state"`
+	Street      pgtype.Text     `json:"street"`
+	Zip         pgtype.Text     `json:"zip"`
+	Paymentinfo json.RawMessage `json:"paymentinfo"`
+	UserID      uuid.UUID       `json:"user_id"`
 }
 
 func (q *Queries) UpdateUserContactInfo(ctx context.Context, arg UpdateUserContactInfoParams) (UserContactInfo, error) {

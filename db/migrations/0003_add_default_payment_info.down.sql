@@ -1,0 +1,3 @@
+ALTER TABLE user_contact_info
+ALTER COLUMN paymentInfo DROP DEFAULT;
+ALTER COLUMN paymentInfo DROP NOT NULL;
