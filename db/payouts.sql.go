@@ -78,49 +78,97 @@ func (q *Queries) DeletePayout(ctx context.Context, id uuid.UUID) error {
 }
 
 const getPayout = `-- name: GetPayout :one
-select id, user_id, client_id, date, amount, created_at, updated_at 
+select 
+  payouts.id,
+  payouts.user_id,
+  payouts.date,
+  payouts.amount,
+  payouts.created_at,
+  payouts.updated_at,
+  clients.id as client_id,
+  clients.fname as client_fname,
+  clients.lname as client_lname
 from payouts
-where id = $1
+left join clients on payouts.client_id = clients.id
+where payouts.id = $1
 `
 
-func (q *Queries) GetPayout(ctx context.Context, id uuid.UUID) (Payout, error) {
+type GetPayoutRow struct {
+	ID          uuid.UUID        `json:"id"`
+	UserID      uuid.UUID        `json:"user_id"`
+	Date        pgtype.Timestamp `json:"date"`
+	Amount      int32            `json:"amount"`
+	CreatedAt   pgtype.Timestamp `json:"created_at"`
+	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
+	ClientID    pgtype.UUID      `json:"client_id"`
+	ClientFname pgtype.Text      `json:"client_fname"`
+	ClientLname pgtype.Text      `json:"client_lname"`
+}
+
+func (q *Queries) GetPayout(ctx context.Context, id uuid.UUID) (GetPayoutRow, error) {
 	row := q.db.QueryRow(ctx, getPayout, id)
-	var i Payout
+	var i GetPayoutRow
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
-		&i.ClientID,
 		&i.Date,
 		&i.Amount,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ClientID,
+		&i.ClientFname,
+		&i.ClientLname,
 	)
 	return i, err
 }
 
 const getPayouts = `-- name: GetPayouts :many
-select id, user_id, client_id, date, amount, created_at, updated_at 
+select
+  payouts.id,
+  payouts.user_id,
+  payouts.date,
+  payouts.amount,
+  payouts.created_at,
+  payouts.updated_at,
+  clients.id as client_id,
+  clients.fname as client_fname,
+  clients.lname as client_lname
 from payouts
-where user_id = $1 or client_id = $1
+left join clients on payouts.client_id = clients.id
+where payouts.user_id = $1 or clients.id = $1
 `
 
-func (q *Queries) GetPayouts(ctx context.Context, userID uuid.UUID) ([]Payout, error) {
+type GetPayoutsRow struct {
+	ID          uuid.UUID        `json:"id"`
+	UserID      uuid.UUID        `json:"user_id"`
+	Date        pgtype.Timestamp `json:"date"`
+	Amount      int32            `json:"amount"`
+	CreatedAt   pgtype.Timestamp `json:"created_at"`
+	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
+	ClientID    pgtype.UUID      `json:"client_id"`
+	ClientFname pgtype.Text      `json:"client_fname"`
+	ClientLname pgtype.Text      `json:"client_lname"`
+}
+
+func (q *Queries) GetPayouts(ctx context.Context, userID uuid.UUID) ([]GetPayoutsRow, error) {
 	rows, err := q.db.Query(ctx, getPayouts, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Payout
+	var items []GetPayoutsRow
 	for rows.Next() {
-		var i Payout
+		var i GetPayoutsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,
-			&i.ClientID,
 			&i.Date,
 			&i.Amount,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ClientID,
+			&i.ClientFname,
+			&i.ClientLname,
 		); err != nil {
 			return nil, err
 		}

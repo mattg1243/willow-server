@@ -75,6 +75,27 @@ func (q *Queries) DeleteEvents(ctx context.Context, dollar_1 []uuid.UUID) error 
 	return err
 }
 
+const eventIsInPayout = `-- name: EventIsInPayout :one
+SELECT EXISTS (
+    SELECT 1
+    FROM payout_events pe
+    JOIN payouts p on pe.payout_id = p.id
+    WHERE pe.event_id = ANY($1::uuid[]) AND p.user_id = $2
+) AS is_in_user_payouts
+`
+
+type EventIsInPayoutParams struct {
+	Column1 []uuid.UUID `json:"column_1"`
+	UserID  uuid.UUID   `json:"user_id"`
+}
+
+func (q *Queries) EventIsInPayout(ctx context.Context, arg EventIsInPayoutParams) (bool, error) {
+	row := q.db.QueryRow(ctx, eventIsInPayout, arg.Column1, arg.UserID)
+	var is_in_user_payouts bool
+	err := row.Scan(&is_in_user_payouts)
+	return is_in_user_payouts, err
+}
+
 const getEvent = `-- name: GetEvent :one
 SELECT 
     e.id as id,

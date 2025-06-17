@@ -67,6 +67,14 @@ type PayoutEvent struct {
 	EventID  uuid.UUID `json:"event_id"`
 }
 
+type ResetPassword struct {
+	ID          int32            `json:"id"`
+	UserID      uuid.UUID        `json:"user_id"`
+	ResetToken  string           `json:"reset_token"`
+	RequestedAt pgtype.Timestamp `json:"requested_at"`
+	ExpiresAt   pgtype.Timestamp `json:"expires_at"`
+}
+
 type User struct {
 	ID            uuid.UUID        `json:"id"`
 	Fname         string           `json:"fname"`

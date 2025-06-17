@@ -72,6 +72,14 @@ INNER JOIN payout_events pe ON pe.event_id = e.id
 WHERE pe.payout_id = $1
 ORDER BY e.date ASC;
 
+-- name: EventIsInPayout :one
+SELECT EXISTS (
+    SELECT 1
+    FROM payout_events pe
+    JOIN payouts p on pe.payout_id = p.id
+    WHERE pe.event_id = ANY($1::uuid[]) AND p.user_id = $2
+) AS is_in_user_payouts;
+
 -- name: UpdateEvent :one
 UPDATE events
 SET
