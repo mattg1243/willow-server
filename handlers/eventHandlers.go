@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -262,6 +263,13 @@ func (h *Handler) UpdateEventHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) DeleteEventHandler(w http.ResponseWriter, r *http.Request) {
 	eventIDsStr := r.URL.Query()["id"]
 	clientIDStr := r.URL.Query().Get("client")
+	userIDStr := custom_middleware.GetUserFromContext(r)
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+
 	if len(eventIDsStr) == 0 {
 		http.Error(w, "No event id provided", http.StatusBadRequest)
 		return
@@ -285,6 +293,28 @@ func (h *Handler) DeleteEventHandler(w http.ResponseWriter, r *http.Request) {
 	clientID, err := uuid.Parse(clientIDStr)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Check if event is associated with a payout
+	inPayout, err := h.queries.EventIsInPayout(r.Context(), db.EventIsInPayoutParams{
+		Column1: eventIDs,
+		UserID:  userID,
+	})
+
+	fmt.Print("Event is in payout: ", inPayout)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if inPayout {
+		http.Error(
+			w,
+			"One or more of the events you attempted to delete are associated with a payout. You must undo the associated payout before you can delete the event(s).",
+			http.StatusBadRequest,
+		)
 		return
 	}
 
@@ -329,6 +359,11 @@ func (h *Handler) DeleteEventHandler(w http.ResponseWriter, r *http.Request) {
 			Balance: int32(newBalance),
 		},
 	)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 }

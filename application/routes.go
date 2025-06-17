@@ -17,7 +17,8 @@ func loadRoutes(h *handlers.Handler) *chi.Mux {
 	router := chi.NewRouter()
 	// Global middleware
 	attachMiddleware(router)
-	router.Get("/", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(200) })
+	// Attach base routes
+	loadBaseRoutes(router, h)
 	// Attach auth routes
 	authRouter := chi.NewRouter()
 	loadAuthRoutes(authRouter, h)
@@ -44,6 +45,12 @@ func loadRoutes(h *handlers.Handler) *chi.Mux {
 	router.Mount("/payout", payoutRouter)
 	// Return the completed router
 	return router
+}
+
+func loadBaseRoutes(router chi.Router, h *handlers.Handler) {
+	router.Get("/", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(200) })
+	router.Post("/reset-password", h.SendResetPasswordEmailHandler)
+	router.Post("/new-password", h.SetNewPasswordHandler)
 }
 
 func loadAuthRoutes(router chi.Router, h *handlers.Handler) {
@@ -98,7 +105,7 @@ func loadPayoutRoutes(router chi.Router, h *handlers.Handler) {
 		router.Use(custom_middleware.AuthJwt)
 		router.Get("/make", h.MakePayoutHandler)
 		router.Post("/", h.SavePayoutHandler)
-		router.Get("/", h.GetPayoutHandler)
+		router.Get("/", h.GetPayoutsHandler)
 		router.Delete("/", h.DeletePayoutHandler)
 	})
 }
