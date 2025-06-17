@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/mattg1243/willow-server/application"
+	"github.com/mattg1243/willow-server/cron"
 	"github.com/mattg1243/willow-server/db"
 	"github.com/mattg1243/willow-server/handlers"
 )
@@ -53,6 +54,8 @@ func main() {
 	defer dbPool.Close()
 
 	handler := handlers.New(dbPool)
+	// cron
+	cron.StartCronJobs(db.New(dbPool))
 
 	app := application.New(handler)
 	err = app.Start(ctx)
