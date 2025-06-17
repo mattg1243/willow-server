@@ -48,9 +48,9 @@ func TestCalculatePayout(t *testing.T) {
 		{
 			name: "Overcharges with no retainer payments",
 			events: []db.GetEventsRow{
-				createTestEvent("11111111-1111-1111-1111-111111111111", 100, true),  // Chargeable event
-				createTestEvent("22222222-2222-2222-2222-222222222222", 200, true),  // Chargeable event
-				createTestEvent("33333333-3333-3333-3333-333333333333", 300, true),  // Chargeable event
+				createTestEvent("11111111-1111-1111-1111-111111111111", 100, true), // Chargeable event
+				createTestEvent("22222222-2222-2222-2222-222222222222", 200, true), // Chargeable event
+				createTestEvent("33333333-3333-3333-3333-333333333333", 300, true), // Chargeable event
 			},
 			expectedAmt: 0, // No retainer payments, so no payout
 		},
@@ -59,13 +59,13 @@ func TestCalculatePayout(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Call the function under test
-			actualAmt, actualIDs := CalculatePayout(tt.events)
+			actualAmt, actualEvents := CalculatePayout(tt.events)
 
 			// Calculate the total of the events in actualIDs
 			totalCharged := 0
-			for _, id := range actualIDs {
+			for _, actualEvent := range actualEvents {
 				for _, event := range tt.events {
-					if event.ID == id {
+					if event.ID == actualEvent.ID {
 						totalCharged += int(event.Amount)
 					}
 				}
@@ -78,19 +78,19 @@ func TestCalculatePayout(t *testing.T) {
 			assert.True(t, totalCharged <= tt.expectedAmt, "Total charged exceeds the expected payout amount")
 
 			// Ensure that all returned events are chargeable events
-			for _, id := range actualIDs {
+			for _, actualEvent := range actualEvents {
 				found := false
 				for _, event := range tt.events {
-					if event.ID == id && event.Charge {
+					if event.ID == actualEvent.ID && event.Charge {
 						found = true
 						break
 					}
 				}
-				assert.True(t, found, fmt.Sprintf("Non-chargeable event %s found in result set", id))
+				assert.True(t, found, fmt.Sprintf("Non-chargeable event %s found in result set", actualEvent.ID))
 			}
 
 			// Print detailed information for the test case
-			t.Logf("Test '%s' passed: Calculated Payout: %d, Total Charged: %d, Event IDs Used: %v", tt.name, actualAmt, totalCharged, actualIDs)
+			t.Logf("Test '%s' passed: Calculated Payout: %d, Total Charged: %d, Event IDs Used: %v", tt.name, actualAmt, totalCharged, actualEvents)
 		})
 	}
 }

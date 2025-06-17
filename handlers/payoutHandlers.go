@@ -13,8 +13,8 @@ import (
 )
 
 type payoutStruct struct {
-	Payout int         `json:"payout"`
-	Events []uuid.UUID `json:"events"`
+	Payout int               `json:"payout"`
+	Events []db.GetEventsRow `json:"events"`
 }
 
 func (h *Handler) MakePayoutHandler(w http.ResponseWriter, r *http.Request) {
@@ -123,23 +123,33 @@ func (h *Handler) SavePayoutHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *Handler) GetPayoutHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetPayoutsHandler(w http.ResponseWriter, r *http.Request) {
 	payoutIDStr := r.URL.Query().Get("id")
+	clientIDStr := r.URL.Query().Get("client")
+	var err error
+
 	if payoutIDStr == "" {
-		// Return all of the users payouts
-		userIDStr := custom_middleware.GetUserFromContext(r)
-		if userIDStr == "" {
-			http.Error(w, "No user ID provided with request", http.StatusBadRequest)
-			return
+		var payouts []db.GetPayoutsRow
+		var queryID uuid.UUID
+		// Check if client id is provided
+		if clientIDStr != "" {
+			queryID, err = uuid.Parse(clientIDStr)
+		} else {
+			// Return all of the users payouts
+			userIDStr := custom_middleware.GetUserFromContext(r)
+			if userIDStr == "" {
+				http.Error(w, "No user ID provided with request", http.StatusBadRequest)
+				return
+			}
+			queryID, err = uuid.Parse(userIDStr)
 		}
 
-		userID, err := uuid.Parse(userIDStr)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		payouts, err := h.queries.GetPayouts(r.Context(), userID)
+		payouts, err = h.queries.GetPayouts(r.Context(), queryID)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -169,27 +179,6 @@ func (h *Handler) GetPayoutHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Failed to encode payout data in the response", http.StatusInternalServerError)
 			return
 		}
-	}
-}
-
-func (h *Handler) GetPayoutsHandler(w http.ResponseWriter, r *http.Request) {
-	userIDStr := custom_middleware.GetUserFromContext(r)
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	payouts, err := h.queries.GetPayouts(r.Context(), userID)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(payouts); err != nil {
-		http.Error(w, "Failed to encode payout data in the response", http.StatusInternalServerError)
-		return
 	}
 }
 
