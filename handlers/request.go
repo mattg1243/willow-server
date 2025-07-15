@@ -396,3 +396,52 @@ func (r *setNewPasswordRequest) bind(req *http.Request, v *Validator) error {
 
 	return nil
 }
+
+type createPaymentTypeRequest struct {
+	Name string `json:"name" validate:"required"`
+}
+
+func (r *createPaymentTypeRequest) bind(req *http.Request, v *Validator) error {
+	if err := baseBind(req, r); err != nil {
+		return err
+	}
+
+	if err := v.Validate(r); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type updatePaymentTypeRequest struct {
+	ID string `json:"id" validate:"required"`
+	Name string `json:"name" validate:"required"`
+}
+
+func (r *updatePaymentTypeRequest) bind(req *http.Request, v *Validator) error {
+	if err := baseBind(req, r); err != nil {
+		return err
+	}
+
+	if err := v.Validate(r); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type deletePaymentTypeRequest struct {
+	ID string `json:"id" validate:"required"`
+}
+
+func (r *deletePaymentTypeRequest) bind(req *http.Request, v *Validator) error {
+	if err := baseBind(req, r); err != nil {
+		return err
+	}
+
+	if err := v.Validate(r); err != nil {
+		return err
+	}
+
+	return nil
+}

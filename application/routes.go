@@ -43,6 +43,10 @@ func loadRoutes(h *handlers.Handler) *chi.Mux {
 	payoutRouter := chi.NewRouter()
 	loadPayoutRoutes(payoutRouter, h)
 	router.Mount("/payout", payoutRouter)
+	// Attach payment type routes
+	paymentTypeRouter := chi.NewRouter()
+	loadPaymentTypeRoutes(paymentTypeRouter, h)
+	router.Mount("/payment-types", paymentTypeRouter)
 	// Return the completed router
 	return router
 }
@@ -118,6 +122,17 @@ func loadEventTypeRoutes(router chi.Router, h *handlers.Handler) {
 		router.Get("/", h.GetEventTypeHandler)
 		router.Put("/", h.UpdateEventTypeHandler)
 		router.Delete("/", h.DeleteEventTypeHandler)
+	})
+}
+
+// Attaches all payment type related handlers to router
+func loadPaymentTypeRoutes(router chi.Router, h *handlers.Handler) {
+	router.Group(func(router chi.Router) {
+		router.Use(custom_middleware.AuthJwt)
+		router.Post("/", h.CreatePaymentTypeHandler)
+		router.Get("/", h.GetPaymentTypesHandler)
+		router.Put("/", h.UpdatePaymentTypeHandler)
+		router.Delete("/", h.DeletePaymentTypeHandler)
 	})
 }
 

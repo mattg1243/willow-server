@@ -52,6 +52,12 @@ type EventType struct {
 	UpdatedAt pgtype.Timestamp `json:"updated_at"`
 }
 
+type PaymentType struct {
+	ID     int32       `json:"id"`
+	UserID pgtype.UUID `json:"user_id"`
+	Name   string      `json:"name"`
+}
+
 type Payout struct {
 	ID        uuid.UUID        `json:"id"`
 	UserID    uuid.UUID        `json:"user_id"`
