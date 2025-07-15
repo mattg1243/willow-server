@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -71,7 +72,7 @@ func (h *Handler) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// hash the password
-	hash, err := user.HashPassword(req.User.Password)
+	hash, err := db.HashPassword(req.User.Password)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -203,8 +204,9 @@ func (h *Handler) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.queries.GetUserByEmail(r.Context(), req.Email)
 	if err != nil {
+		w.Header()
 		if err.Error() == "no rows in result set" {
-			http.Error(w, "No user found with that email address", http.StatusNotFound)
+			http.Error(w, "Invalid login credentials.", http.StatusUnauthorized)
 		} else {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -226,8 +228,8 @@ func (h *Handler) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 			Name:     "willow-access-token",
 			Value:    jwt,
 			Expires:  time.Now().Add((time.Hour * 72)),
-			HttpOnly: os.Getenv("PROD") == "true", //TODO change to true for production
-			Secure:   os.Getenv("PROD") == "true", //TODO change to true for production
+			HttpOnly: os.Getenv("PROD") == "true",
+			Secure:   os.Getenv("PROD") == "true",
 			Path:     "/",
 			SameSite: http.SameSiteLaxMode,
 		}
@@ -248,8 +250,8 @@ func (h *Handler) LogoutUserHandler(w http.ResponseWriter, r *http.Request) {
 		Name:     "willow-access-token",
 		Value:    "",
 		Expires:  time.Now().Add(-1 * time.Hour),
-		HttpOnly: os.Getenv("PROD") == "true", // TODO: Set to true in production
-		Secure:   os.Getenv("PROD") == "true", // TODO: Set to true in production
+		HttpOnly: os.Getenv("PROD") == "true",
+		Secure:   os.Getenv("PROD") == "true",
 		Path:     "/",
 		SameSite: http.SameSiteLaxMode,
 	}
@@ -257,4 +259,106 @@ func (h *Handler) LogoutUserHandler(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, cookie)
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Successfully logged out"))
+}
+
+func (h *Handler) SendResetPasswordEmailHandler(w http.ResponseWriter, r *http.Request) {
+	// parse and bind request to struct
+	req := &sendResetPasswordEmailRequest{}
+	if err := req.bind(r, h.validator); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	// make sure user with provided email exists
+	user, err := h.queries.GetUserByEmail(r.Context(), req.Email)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			log.Printf("No user found with that email address %v\n", req.Email)
+			// send 200 status even if user exists to prevent attackers
+			// from finding what emails do exists
+			w.WriteHeader(http.StatusOK)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+	// check if user has a valid token already in the db
+	var token string
+	tokenFromDb, err := h.queries.GetResetPasswordTokenByUser(r.Context(), user.ID)
+	if err != nil && err.Error() != "no rows in result set" {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if len(tokenFromDb.ResetToken) > 0 {
+		token = tokenFromDb.ResetToken
+	} else {
+		token, err = utils.GenerateResetPasswordToken()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		_, err = h.queries.CreateResetPasswordToken(r.Context(), db.CreateResetPasswordTokenParams{
+			UserID:     user.ID,
+			ResetToken: token,
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+	}
+
+	// create and send email
+	emailContent := utils.CreateResetPasswordEmail(token)
+
+	sendEmailParams := utils.SendEmailParams{
+		Subject: "Reset your Willow password",
+		Content: emailContent,
+		To:      req.Email,
+	}
+
+	_, err = utils.SendEmail(sendEmailParams)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) SetNewPasswordHandler(w http.ResponseWriter, r *http.Request) {
+	req := &setNewPasswordRequest{}
+
+	if err := req.bind(r, h.validator); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// check if token exists and is valid
+	reset, err := h.queries.GetResetPasswordToken(r.Context(), req.Token)
+	if err != nil {
+		if err.Error() == "no rows in result set" {
+			http.Error(
+				w,
+				"The link you have used to reset your password is invalid. Please try again.",
+				http.StatusNotAcceptable,
+			)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	newHash, err := db.HashPassword(req.Password)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = h.queries.UpdateUserPassword(r.Context(), db.UpdateUserPasswordParams{ID: reset.UserID, Hash: newHash})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusAccepted)
 }

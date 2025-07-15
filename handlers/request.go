@@ -60,7 +60,7 @@ func (r *createUserRequest) bind(req *http.Request, u *db.User, cI *db.UserConta
 	u.Email = r.User.Email
 	u.Rate = pgtype.Int4{Int32: r.User.Rate, Valid: false}
 	// hash password
-	h, err := u.HashPassword(r.User.Password)
+	h, err := db.HashPassword(r.User.Password)
 	if err != nil {
 		return err
 	}
@@ -360,6 +360,39 @@ func (r *updateEventTypeRequest) bind(req *http.Request, et *db.EventType, v *Va
 	et.ID = r.EventType.ID
 	et.Charge = r.EventType.Charge
 	et.Title = r.EventType.Title
+
+	return nil
+}
+
+type sendResetPasswordEmailRequest struct {
+	Email string `json:"email" validate:"required"`
+}
+
+func (r *sendResetPasswordEmailRequest) bind(req *http.Request, v *Validator) error {
+	if err := baseBind(req, r); err != nil {
+		return err
+	}
+
+	if err := v.Validate(r); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type setNewPasswordRequest struct {
+	Token    string `json:"token" validate:"required"`
+	Password string `json:"password" validate:"required"`
+}
+
+func (r *setNewPasswordRequest) bind(req *http.Request, v *Validator) error {
+	if err := baseBind(req, r); err != nil {
+		return err
+	}
+
+	if err := v.Validate(r); err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -11,7 +11,7 @@ type PaymentInfo struct {
 	PayPal string `json:"paypal"`
 }
 
-func (u *User) HashPassword(password string) (string, error) {
+func HashPassword(password string) (string, error) {
 	if len(password) < 12 {
 		return "", errors.New("Password must be more than 12 characters")
 	}

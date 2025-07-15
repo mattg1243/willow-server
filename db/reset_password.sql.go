@@ -53,12 +53,37 @@ func (q *Queries) DeleteExpiredResetTokens(ctx context.Context) error {
 }
 
 const getResetPasswordToken = `-- name: GetResetPasswordToken :one
-SELECT reset_token FROM reset_password WHERE user_id = $1 AND expires_at > NOW()
+SELECT id, user_id, reset_token, requested_at, expires_at FROM reset_password WHERE reset_token = $1 AND expires_at > NOW()
 `
 
-func (q *Queries) GetResetPasswordToken(ctx context.Context, userID uuid.UUID) (string, error) {
-	row := q.db.QueryRow(ctx, getResetPasswordToken, userID)
-	var reset_token string
-	err := row.Scan(&reset_token)
-	return reset_token, err
+func (q *Queries) GetResetPasswordToken(ctx context.Context, resetToken string) (ResetPassword, error) {
+	row := q.db.QueryRow(ctx, getResetPasswordToken, resetToken)
+	var i ResetPassword
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.ResetToken,
+		&i.RequestedAt,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
+const getResetPasswordTokenByUser = `-- name: GetResetPasswordTokenByUser :one
+SELECT id, user_id, reset_token, requested_at, expires_at FROM reset_password
+WHERE user_id = $1
+  AND expires_at > NOW()
+`
+
+func (q *Queries) GetResetPasswordTokenByUser(ctx context.Context, userID uuid.UUID) (ResetPassword, error) {
+	row := q.db.QueryRow(ctx, getResetPasswordTokenByUser, userID)
+	var i ResetPassword
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.ResetToken,
+		&i.RequestedAt,
+		&i.ExpiresAt,
+	)
+	return i, err
 }

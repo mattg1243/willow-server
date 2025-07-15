@@ -7,12 +7,12 @@ import (
 )
 
 func GenerateResetPasswordToken() (string, error) {
-  bytes := make([]byte, 32)
+	bytes := make([]byte, 32)
 
-  if _, err := rand.Read(bytes); err != nil {
-    return "", fmt.Errorf("failed to generate secure random token: %w", err)
-  }
+	if _, err := rand.Read(bytes); err != nil {
+		return "", fmt.Errorf("failed to generate secure random token: %w", err)
+	}
 
-  token := base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(bytes)
-  return token, nil
+	token := base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(bytes)
+	return token, nil
 }

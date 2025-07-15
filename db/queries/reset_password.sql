@@ -12,7 +12,12 @@ INSERT INTO reset_password (
 ) RETURNING *;
 
 -- name: GetResetPasswordToken :one
-SELECT reset_token FROM reset_password WHERE user_id = $1 AND expires_at > NOW();
+SELECT * FROM reset_password WHERE reset_token = $1 AND expires_at > NOW();
+
+-- name: GetResetPasswordTokenByUser :one
+SELECT * FROM reset_password
+WHERE user_id = $1
+  AND expires_at > NOW();
 
 -- name: DeleteExpiredResetTokens :exec
 DELETE FROM reset_password WHERE expires_at <= NOW();
