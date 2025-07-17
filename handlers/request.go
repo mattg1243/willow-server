@@ -229,13 +229,14 @@ func (r *updateClientRequest) bind(req *http.Request, cl *db.Client, v *Validato
 // event requests
 type createEventRequest struct {
 	Event struct {
-		ClientID    uuid.UUID `json:"client_id" validate:"required"`
-		Date        string    `json:"date" validate:"required"`
-		Duration    float64   `json:"duration"`
-		EventTypeID uuid.UUID `json:"event_type_id" validate:"required"`
-		Detail      string    `json:"detail"`
-		Rate        int32     `json:"rate"`
-		Amount      float64   `json:"amount"`
+		ClientID       uuid.UUID `json:"client_id" validate:"required"`
+		Date           string    `json:"date" validate:"required"`
+		Duration       float64   `json:"duration"`
+		EventTypeID    uuid.UUID `json:"event_type_id" validate:"required"`
+		EventNotes     string    `json:"event_notes"`
+		StatementNotes string    `json:"statement_notes"`
+		Rate           int32     `json:"rate"`
+		Amount         float64   `json:"amount"`
 	} `json:"event"`
 }
 
@@ -266,7 +267,8 @@ func (r *createEventRequest) bind(req *http.Request, e *db.Event, v *Validator) 
 	e.Date = pgtype.Timestamp{Time: timeStr, Valid: true}
 	e.Duration = Float64ToPgNumeric(r.Event.Duration)
 	e.EventTypeID = r.Event.EventTypeID
-	e.Detail = pgtype.Text{String: r.Event.Detail, Valid: true}
+	e.EventNotes = r.Event.EventNotes
+	e.StatementNotes = r.Event.StatementNotes
 	e.Rate = r.Event.Rate
 	e.Amount = int32(r.Event.Amount)
 	e.ClientID = r.Event.ClientID
@@ -276,15 +278,16 @@ func (r *createEventRequest) bind(req *http.Request, e *db.Event, v *Validator) 
 
 type updateEventRequest struct {
 	Event struct {
-		ID          uuid.UUID `json:"id" validate:"required"`
-		ClientID    uuid.UUID `json:"client_id" validate:"required"`
-		Date        string    `json:"date" validate:"required"`
-		Duration    float64   `json:"duration"`
-		EventTypeID uuid.UUID `json:"event_type_id" validate:"required"`
-		Detail      string    `json:"detail"`
-		Rate        int32     `json:"rate"`
-		Amount      float64   `json:"amount"`
-		Paid        bool      `json:"paid"`
+		ID             uuid.UUID `json:"id" validate:"required"`
+		ClientID       uuid.UUID `json:"client_id" validate:"required"`
+		Date           string    `json:"date" validate:"required"`
+		Duration       float64   `json:"duration"`
+		EventTypeID    uuid.UUID `json:"event_type_id" validate:"required"`
+		EventNotes     string    `json:"event_notes"`
+		StatementNotes string    `json:"statement_notes"`
+		Rate           int32     `json:"rate"`
+		Amount         float64   `json:"amount"`
+		Paid           bool      `json:"paid"`
 	} `json:"event"`
 }
 
@@ -309,7 +312,8 @@ func (r *updateEventRequest) bind(req *http.Request, e *db.Event, v *Validator) 
 	e.Date = pgtype.Timestamp{Time: timeStr, Valid: true}
 	e.Duration = Float64ToPgNumeric(r.Event.Duration)
 	e.EventTypeID = r.Event.EventTypeID
-	e.Detail = pgtype.Text{String: r.Event.Detail, Valid: true}
+	e.EventNotes = r.Event.EventNotes
+	e.StatementNotes = r.Event.StatementNotes
 	e.Rate = r.Event.Rate
 	e.Amount = int32(r.Event.Amount)
 	e.Paid = pgtype.Bool{Bool: r.Event.Paid, Valid: true}
@@ -414,7 +418,7 @@ func (r *createPaymentTypeRequest) bind(req *http.Request, v *Validator) error {
 }
 
 type updatePaymentTypeRequest struct {
-	ID string `json:"id" validate:"required"`
+	ID   string `json:"id" validate:"required"`
 	Name string `json:"name" validate:"required"`
 }
 

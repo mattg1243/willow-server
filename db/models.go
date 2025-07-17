@@ -33,13 +33,14 @@ type Event struct {
 	Date           pgtype.Timestamp `json:"date"`
 	Duration       pgtype.Numeric   `json:"duration"`
 	EventTypeID    uuid.UUID        `json:"event_type_id"`
-	Detail         pgtype.Text      `json:"detail"`
 	Rate           int32            `json:"rate"`
 	Amount         int32            `json:"amount"`
 	RunningBalance int32            `json:"running_balance"`
 	Paid           pgtype.Bool      `json:"paid"`
 	CreatedAt      pgtype.Timestamp `json:"created_at"`
 	UpdatedAt      pgtype.Timestamp `json:"updated_at"`
+	EventNotes     string           `json:"event_notes"`
+	StatementNotes string           `json:"statement_notes"`
 }
 
 type EventType struct {
@@ -50,6 +51,11 @@ type EventType struct {
 	Charge    bool             `json:"charge"`
 	CreatedAt pgtype.Timestamp `json:"created_at"`
 	UpdatedAt pgtype.Timestamp `json:"updated_at"`
+}
+
+type EventsPaymentType struct {
+	EventID       uuid.UUID `json:"event_id"`
+	PaymentTypeID int32     `json:"payment_type_id"`
 }
 
 type PaymentType struct {

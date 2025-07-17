@@ -36,7 +36,8 @@ func (h *Handler) CreateEventHandler(w http.ResponseWriter, r *http.Request) {
 		Date:           event.Date,
 		Duration:       event.Duration,
 		EventTypeID:    event.EventTypeID,
-		Detail:         event.Detail,
+		EventNotes:     event.EventNotes,
+		StatementNotes: event.StatementNotes,
 		Rate:           event.Rate,
 		Amount:         event.Amount,
 		RunningBalance: 0,
@@ -207,14 +208,15 @@ func (h *Handler) UpdateEventHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	updatedEvent, err := h.queries.UpdateEvent(r.Context(), db.UpdateEventParams{
-		ID:          event.ID,
-		Date:        event.Date,
-		Duration:    event.Duration,
-		EventTypeID: event.EventTypeID,
-		Detail:      event.Detail,
-		Rate:        event.Rate,
-		Amount:      event.Amount,
-		Paid:        event.Paid,
+		ID:             event.ID,
+		Date:           event.Date,
+		Duration:       event.Duration,
+		EventTypeID:    event.EventTypeID,
+		EventNotes:     event.EventNotes,
+		StatementNotes: event.StatementNotes,
+		Rate:           event.Rate,
+		Amount:         event.Amount,
+		Paid:           event.Paid,
 	})
 
 	if err != nil {

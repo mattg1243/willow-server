@@ -14,10 +14,22 @@ import (
 
 const createEvent = `-- name: CreateEvent :one
 INSERT INTO events (
-    client_id, user_id, date, duration, event_type_id, detail, rate, amount, running_balance, id, created_at, updated_at
+    client_id, 
+    user_id, 
+    date, 
+    duration, 
+    event_type_id, 
+    rate, 
+    amount, 
+    running_balance, 
+    event_notes, 
+    statement_notes, 
+    id, 
+    created_at, 
+    updated_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW()
-) RETURNING id, user_id, client_id, date, duration, event_type_id, detail, rate, amount, running_balance, paid, created_at, updated_at
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW()
+) RETURNING id, user_id, client_id, date, duration, event_type_id, rate, amount, running_balance, paid, created_at, updated_at, event_notes, statement_notes
 `
 
 type CreateEventParams struct {
@@ -26,10 +38,11 @@ type CreateEventParams struct {
 	Date           pgtype.Timestamp `json:"date"`
 	Duration       pgtype.Numeric   `json:"duration"`
 	EventTypeID    uuid.UUID        `json:"event_type_id"`
-	Detail         pgtype.Text      `json:"detail"`
 	Rate           int32            `json:"rate"`
 	Amount         int32            `json:"amount"`
 	RunningBalance int32            `json:"running_balance"`
+	EventNotes     string           `json:"event_notes"`
+	StatementNotes string           `json:"statement_notes"`
 	ID             uuid.UUID        `json:"id"`
 }
 
@@ -40,10 +53,11 @@ func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (Event
 		arg.Date,
 		arg.Duration,
 		arg.EventTypeID,
-		arg.Detail,
 		arg.Rate,
 		arg.Amount,
 		arg.RunningBalance,
+		arg.EventNotes,
+		arg.StatementNotes,
 		arg.ID,
 	)
 	var i Event
@@ -54,13 +68,14 @@ func (q *Queries) CreateEvent(ctx context.Context, arg CreateEventParams) (Event
 		&i.Date,
 		&i.Duration,
 		&i.EventTypeID,
-		&i.Detail,
 		&i.Rate,
 		&i.Amount,
 		&i.RunningBalance,
 		&i.Paid,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.EventNotes,
+		&i.StatementNotes,
 	)
 	return i, err
 }
@@ -105,12 +120,13 @@ SELECT
     e.duration as duration,
     et.id as event_type_id,
     et.title as event_type_title,
-    e.detail as detail,
     e.rate as rate,
     e.amount::INTEGER as amount,
     e.running_balance::INTEGER as running_balance,
     e.paid as paid,
-    et.charge as charge
+    et.charge as charge,
+    e.statement_notes as statement_notes,
+    e.event_notes as event_notes
 FROM events e
 INNER JOIN event_types et ON e.event_type_id = et.id
 WHERE e.id = $1
@@ -124,12 +140,13 @@ type GetEventRow struct {
 	Duration       pgtype.Numeric     `json:"duration"`
 	EventTypeID    uuid.UUID          `json:"event_type_id"`
 	EventTypeTitle string             `json:"event_type_title"`
-	Detail         pgtype.Text        `json:"detail"`
 	Rate           int32              `json:"rate"`
 	Amount         int32              `json:"amount"`
 	RunningBalance int32              `json:"running_balance"`
 	Paid           pgtype.Bool        `json:"paid"`
 	Charge         bool               `json:"charge"`
+	StatementNotes string             `json:"statement_notes"`
+	EventNotes     string             `json:"event_notes"`
 }
 
 func (q *Queries) GetEvent(ctx context.Context, id uuid.UUID) (GetEventRow, error) {
@@ -143,12 +160,13 @@ func (q *Queries) GetEvent(ctx context.Context, id uuid.UUID) (GetEventRow, erro
 		&i.Duration,
 		&i.EventTypeID,
 		&i.EventTypeTitle,
-		&i.Detail,
 		&i.Rate,
 		&i.Amount,
 		&i.RunningBalance,
 		&i.Paid,
 		&i.Charge,
+		&i.StatementNotes,
+		&i.EventNotes,
 	)
 	return i, err
 }
@@ -162,12 +180,13 @@ SELECT
     e.duration as duration,
     et.id as event_type_id,
     et.title as event_type_title,
-    e.detail as detail,
     e.rate as rate,
     e.amount::INTEGER as amount,
     e.running_balance::INTEGER as running_balance,
     e.paid as paid,
-    et.charge as charge
+    et.charge as charge,
+    e.statement_notes as statement_notes,
+    e.event_notes as event_notes
 FROM events e
 INNER JOIN event_types et ON e.event_type_id = et.id
 WHERE e.client_id = $1 or e.user_id = $1
@@ -190,12 +209,13 @@ type GetEventsRow struct {
 	Duration       pgtype.Numeric     `json:"duration"`
 	EventTypeID    uuid.UUID          `json:"event_type_id"`
 	EventTypeTitle string             `json:"event_type_title"`
-	Detail         pgtype.Text        `json:"detail"`
 	Rate           int32              `json:"rate"`
 	Amount         int32              `json:"amount"`
 	RunningBalance int32              `json:"running_balance"`
 	Paid           pgtype.Bool        `json:"paid"`
 	Charge         bool               `json:"charge"`
+	StatementNotes string             `json:"statement_notes"`
+	EventNotes     string             `json:"event_notes"`
 }
 
 func (q *Queries) GetEvents(ctx context.Context, arg GetEventsParams) ([]GetEventsRow, error) {
@@ -215,12 +235,13 @@ func (q *Queries) GetEvents(ctx context.Context, arg GetEventsParams) ([]GetEven
 			&i.Duration,
 			&i.EventTypeID,
 			&i.EventTypeTitle,
-			&i.Detail,
 			&i.Rate,
 			&i.Amount,
 			&i.RunningBalance,
 			&i.Paid,
 			&i.Charge,
+			&i.StatementNotes,
+			&i.EventNotes,
 		); err != nil {
 			return nil, err
 		}
@@ -241,12 +262,13 @@ SELECT
     e.duration as duration,
     et.id as event_type_id,
     et.title as event_type_title,
-    e.detail as detail,
     e.rate as rate,
     e.amount::INTEGER as amount,
     e.running_balance::INTEGER as running_balance,
     e.paid as paid,
-    et.charge as charge
+    et.charge as charge,
+    e.statement_notes as statement_notes,
+    e.event_notes as event_notes
 FROM events e
 INNER JOIN event_types et ON e.event_type_id = et.id
 INNER JOIN payout_events pe ON pe.event_id = e.id
@@ -262,12 +284,13 @@ type GetPayoutEventsRow struct {
 	Duration       pgtype.Numeric     `json:"duration"`
 	EventTypeID    uuid.UUID          `json:"event_type_id"`
 	EventTypeTitle string             `json:"event_type_title"`
-	Detail         pgtype.Text        `json:"detail"`
 	Rate           int32              `json:"rate"`
 	Amount         int32              `json:"amount"`
 	RunningBalance int32              `json:"running_balance"`
 	Paid           pgtype.Bool        `json:"paid"`
 	Charge         bool               `json:"charge"`
+	StatementNotes string             `json:"statement_notes"`
+	EventNotes     string             `json:"event_notes"`
 }
 
 func (q *Queries) GetPayoutEvents(ctx context.Context, payoutID uuid.UUID) ([]GetPayoutEventsRow, error) {
@@ -287,12 +310,13 @@ func (q *Queries) GetPayoutEvents(ctx context.Context, payoutID uuid.UUID) ([]Ge
 			&i.Duration,
 			&i.EventTypeID,
 			&i.EventTypeTitle,
-			&i.Detail,
 			&i.Rate,
 			&i.Amount,
 			&i.RunningBalance,
 			&i.Paid,
 			&i.Charge,
+			&i.StatementNotes,
+			&i.EventNotes,
 		); err != nil {
 			return nil, err
 		}
@@ -312,7 +336,7 @@ SET
 
 WHERE
     id = $1
-RETURNING id, user_id, client_id, date, duration, event_type_id, detail, rate, amount, running_balance, paid, created_at, updated_at
+RETURNING id, user_id, client_id, date, duration, event_type_id, rate, amount, running_balance, paid, created_at, updated_at, event_notes, statement_notes
 `
 
 type MarkEventPaidParams struct {
@@ -330,13 +354,14 @@ func (q *Queries) MarkEventPaid(ctx context.Context, arg MarkEventPaidParams) (E
 		&i.Date,
 		&i.Duration,
 		&i.EventTypeID,
-		&i.Detail,
 		&i.Rate,
 		&i.Amount,
 		&i.RunningBalance,
 		&i.Paid,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.EventNotes,
+		&i.StatementNotes,
 	)
 	return i, err
 }
@@ -382,15 +407,16 @@ SET
     date = $2,
     duration = $3,
     event_type_id = $4,
-    detail = $5,
-    rate = $6,
-    amount = $7,
-    running_balance = $8,
-    paid = $9,
+    rate = $5,
+    amount = $6,
+    running_balance = $7,
+    paid = $8,
+    event_notes = $9,
+    statement_notes = $10,
     updated_at = NOW()
 WHERE
     id = $1
-RETURNING id, user_id, client_id, date, duration, event_type_id, detail, rate, amount, running_balance, paid, created_at, updated_at
+RETURNING id, user_id, client_id, date, duration, event_type_id, rate, amount, running_balance, paid, created_at, updated_at, event_notes, statement_notes
 `
 
 type UpdateEventParams struct {
@@ -398,11 +424,12 @@ type UpdateEventParams struct {
 	Date           pgtype.Timestamp `json:"date"`
 	Duration       pgtype.Numeric   `json:"duration"`
 	EventTypeID    uuid.UUID        `json:"event_type_id"`
-	Detail         pgtype.Text      `json:"detail"`
 	Rate           int32            `json:"rate"`
 	Amount         int32            `json:"amount"`
 	RunningBalance int32            `json:"running_balance"`
 	Paid           pgtype.Bool      `json:"paid"`
+	EventNotes     string           `json:"event_notes"`
+	StatementNotes string           `json:"statement_notes"`
 }
 
 func (q *Queries) UpdateEvent(ctx context.Context, arg UpdateEventParams) (Event, error) {
@@ -411,11 +438,12 @@ func (q *Queries) UpdateEvent(ctx context.Context, arg UpdateEventParams) (Event
 		arg.Date,
 		arg.Duration,
 		arg.EventTypeID,
-		arg.Detail,
 		arg.Rate,
 		arg.Amount,
 		arg.RunningBalance,
 		arg.Paid,
+		arg.EventNotes,
+		arg.StatementNotes,
 	)
 	var i Event
 	err := row.Scan(
@@ -425,13 +453,14 @@ func (q *Queries) UpdateEvent(ctx context.Context, arg UpdateEventParams) (Event
 		&i.Date,
 		&i.Duration,
 		&i.EventTypeID,
-		&i.Detail,
 		&i.Rate,
 		&i.Amount,
 		&i.RunningBalance,
 		&i.Paid,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.EventNotes,
+		&i.StatementNotes,
 	)
 	return i, err
 }
