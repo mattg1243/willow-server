@@ -8,7 +8,12 @@ INSERT INTO payment_types (
 -- name: GetPaymentTypes :many
 SELECT * 
 FROM payment_types
-WHERE user_id = $1 OR NULL;
+WHERE user_id = $1 OR $1 IS NULL;
+
+-- name: GetPaymentType :one
+SELECT *
+FROM payment_types
+WHERE id = $1 AND user_id = $2;
 
 -- name: UpdatePaymentType :one
 UPDATE payment_types
