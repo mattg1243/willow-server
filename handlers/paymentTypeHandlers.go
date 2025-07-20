@@ -50,42 +50,6 @@ func (h *Handler) CreatePaymentTypeHandler(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusCreated)
 }
 
-// GetPaymentTypeHandler gets single payment type by id
-func (h *Handler) GetPaymentTypeHandler(w http.ResponseWriter, r *http.Request) {
-	paymentTypeIDQuery := r.URL.Query().Get("id")
-	user := custom_middleware.GetUserFromContext(r)
-	userID, err := uuid.Parse(user)
-
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if paymentTypeIDQuery != "" {
-		paymentTypeID64, err := strconv.ParseInt(paymentTypeIDQuery, 10, 32)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		paymentTypeID32 := int32(paymentTypeID64)
-
-		paymentType, err := h.queries.GetPaymentType(r.Context(), db.GetPaymentTypeParams{
-			ID:     paymentTypeID32,
-			UserID: pgtype.UUID{Bytes: userID, Valid: true},
-		})
-
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		if err := json.NewEncoder(w).Encode(paymentType); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
-}
-
 // GetPaymentTypesHandler get all default payment types and users custom types
 // or if ?id is provided, get a specific payment type
 func (h *Handler) GetPaymentTypesHandler(w http.ResponseWriter, r *http.Request) {
