@@ -10,6 +10,11 @@ SELECT *
 FROM payment_types
 WHERE user_id = $1 OR $1 IS NULL;
 
+-- name: GetDefaultPaymentTypes :many
+SELECT *
+FROM payment_types
+WHERE user_id IS NULL;
+
 -- name: GetPaymentType :one
 SELECT *
 FROM payment_types
@@ -18,10 +23,10 @@ WHERE id = $1 AND user_id = $2;
 -- name: UpdatePaymentType :one
 UPDATE payment_types
 SET
-  "name" = $2
+  "name" = $3
 WHERE
-  id = $1
+  user_id = $1 AND id = $2
 RETURNING *;
 
 -- name: DeletePaymentType :exec
-DELETE FROM payment_types WHERE id = $1;
+DELETE FROM payment_types WHERE user_id = $1 AND id = $2;

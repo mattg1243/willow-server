@@ -418,8 +418,9 @@ func (r *createPaymentTypeRequest) bind(req *http.Request, v *Validator) error {
 }
 
 type updatePaymentTypeRequest struct {
-	ID   string `json:"id" validate:"required"`
-	Name string `json:"name" validate:"required"`
+	UserID string `json:"user_id" validate:"required"`
+	ID     string `json:"id" validate:"required"`
+	Name   string `json:"name" validate:"required"`
 }
 
 func (r *updatePaymentTypeRequest) bind(req *http.Request, v *Validator) error {
@@ -435,7 +436,8 @@ func (r *updatePaymentTypeRequest) bind(req *http.Request, v *Validator) error {
 }
 
 type deletePaymentTypeRequest struct {
-	ID string `json:"id" validate:"required"`
+	UserID string `json:"user_id" validate:"required"`
+	ID     string `json:"id" validate:"required"`
 }
 
 func (r *deletePaymentTypeRequest) bind(req *http.Request, v *Validator) error {

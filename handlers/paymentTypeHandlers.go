@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"slices"
 	"strconv"
 
 	"github.com/google/uuid"
@@ -11,9 +10,6 @@ import (
 	"github.com/mattg1243/willow-server/db"
 	custom_middleware "github.com/mattg1243/willow-server/middleware"
 )
-
-// Sort of hacky way of tracking which payment types are defaults
-var defaultPaymentTypeIDs = []int32{1, 2, 3, 4}
 
 // CreatePaymentTypeHandler Create a custom payment type
 func (h *Handler) CreatePaymentTypeHandler(w http.ResponseWriter, r *http.Request) {
@@ -128,22 +124,29 @@ func (h *Handler) UpdatePaymentTypeHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	id64, err := strconv.ParseInt(req.ID, 10, 32)
+	// Ownership check: Ensure the user in the request context matches the user ID in the request body
+	if custom_middleware.GetUserFromContext(r) != req.UserID {
+		http.Error(w, "Unauthorized user", http.StatusUnauthorized)
+		return
+	}
+
+	userID, err := uuid.Parse(req.UserID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	paymentTypeID64, err := strconv.ParseInt(req.ID, 10, 32)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	id32 := int32(id64)
-
-	// Prevents updating of default payment types
-	if slices.Contains(defaultPaymentTypeIDs, id32) {
-		http.Error(w, "Cannot update default payment types", http.StatusBadRequest)
-		return
-	}
+	paymentTypeID32 := int32(paymentTypeID64)
 
 	paymentType, err := h.queries.UpdatePaymentType(r.Context(), db.UpdatePaymentTypeParams{
-		ID:   id32,
-		Name: req.Name,
+		UserID: pgtype.UUID{Bytes: userID, Valid: true},
+		ID:     paymentTypeID32,
+		Name:   req.Name,
 	})
 
 	if err != nil {
@@ -168,22 +171,49 @@ func (h *Handler) DeletePaymentTypeHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	id64, err := strconv.ParseInt(req.ID, 10, 32)
+	// Ownership check: Ensure the user in the request context matches the user ID in the request body
+	if custom_middleware.GetUserFromContext(r) != req.UserID {
+		http.Error(w, "Unauthorized user", http.StatusUnauthorized)
+		return
+	}
+
+	userID, err := uuid.Parse(req.UserID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	paymentTypeID64, err := strconv.ParseInt(req.ID, 10, 32)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	id32 := int32(id64)
+	paymentTypeID32 := int32(paymentTypeID64)
 
-	// Prevents the deletion of default payment types.
-	if slices.Contains(defaultPaymentTypeIDs, id32) {
-		http.Error(w, "Cannot delete default payment types", http.StatusBadRequest)
-	}
-
-	err = h.queries.DeletePaymentType(r.Context(), id32)
+	err = h.queries.DeletePaymentType(r.Context(), db.DeletePaymentTypeParams{
+		UserID: pgtype.UUID{Bytes: userID, Valid: true},
+		ID:     paymentTypeID32,
+	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+// ensureNonDefaultType checks if the payment type with the given ID is a default type.
+// - returns true: if the type is a user-owned custom type, allowing update or delete.
+// - returns false: if the type is a default type, preventing update or delete.
+func ensureNonDefaultType(h *Handler, id int32) bool {
+	defaultPaymentTypes, err := h.queries.GetDefaultPaymentTypes(nil)
+	if err != nil {
+		return false
+	}
+
+	for _, defaultType := range defaultPaymentTypes {
+		if defaultType.ID == id {
+			return false // It's a default type, cannot update or delete
+		}
+	}
+	return true // It's a custom type, can proceed with update or delete
 }
