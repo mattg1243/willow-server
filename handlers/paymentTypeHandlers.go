@@ -200,20 +200,3 @@ func (h *Handler) DeletePaymentTypeHandler(w http.ResponseWriter, r *http.Reques
 
 	w.WriteHeader(http.StatusOK)
 }
-
-// ensureNonDefaultType checks if the payment type with the given ID is a default type.
-// - returns true: if the type is a user-owned custom type, allowing update or delete.
-// - returns false: if the type is a default type, preventing update or delete.
-func ensureNonDefaultType(h *Handler, id int32) bool {
-	defaultPaymentTypes, err := h.queries.GetDefaultPaymentTypes(nil)
-	if err != nil {
-		return false
-	}
-
-	for _, defaultType := range defaultPaymentTypes {
-		if defaultType.ID == id {
-			return false // It's a default type, cannot update or delete
-		}
-	}
-	return true // It's a custom type, can proceed with update or delete
-}
