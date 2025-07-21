@@ -32,12 +32,43 @@ func (q *Queries) CreatePaymentType(ctx context.Context, arg CreatePaymentTypePa
 }
 
 const deletePaymentType = `-- name: DeletePaymentType :exec
-DELETE FROM payment_types WHERE id = $1
+DELETE FROM payment_types WHERE user_id = $1 AND id = $2
 `
 
-func (q *Queries) DeletePaymentType(ctx context.Context, id int32) error {
-	_, err := q.db.Exec(ctx, deletePaymentType, id)
+type DeletePaymentTypeParams struct {
+	UserID pgtype.UUID `json:"user_id"`
+	ID     int32       `json:"id"`
+}
+
+func (q *Queries) DeletePaymentType(ctx context.Context, arg DeletePaymentTypeParams) error {
+	_, err := q.db.Exec(ctx, deletePaymentType, arg.UserID, arg.ID)
 	return err
+}
+
+const getDefaultPaymentTypes = `-- name: GetDefaultPaymentTypes :many
+SELECT id, user_id, name
+FROM payment_types
+WHERE user_id IS NULL
+`
+
+func (q *Queries) GetDefaultPaymentTypes(ctx context.Context) ([]PaymentType, error) {
+	rows, err := q.db.Query(ctx, getDefaultPaymentTypes)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []PaymentType
+	for rows.Next() {
+		var i PaymentType
+		if err := rows.Scan(&i.ID, &i.UserID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getPaymentType = `-- name: GetPaymentType :one
@@ -87,19 +118,20 @@ func (q *Queries) GetPaymentTypes(ctx context.Context, userID pgtype.UUID) ([]Pa
 const updatePaymentType = `-- name: UpdatePaymentType :one
 UPDATE payment_types
 SET
-  "name" = $2
+  "name" = $3
 WHERE
-  id = $1
+  user_id = $1 AND id = $2
 RETURNING id, user_id, name
 `
 
 type UpdatePaymentTypeParams struct {
-	ID   int32  `json:"id"`
-	Name string `json:"name"`
+	UserID pgtype.UUID `json:"user_id"`
+	ID     int32       `json:"id"`
+	Name   string      `json:"name"`
 }
 
 func (q *Queries) UpdatePaymentType(ctx context.Context, arg UpdatePaymentTypeParams) (PaymentType, error) {
-	row := q.db.QueryRow(ctx, updatePaymentType, arg.ID, arg.Name)
+	row := q.db.QueryRow(ctx, updatePaymentType, arg.UserID, arg.ID, arg.Name)
 	var i PaymentType
 	err := row.Scan(&i.ID, &i.UserID, &i.Name)
 	return i, err
