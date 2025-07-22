@@ -17,7 +17,8 @@ func loadRoutes(h *handlers.Handler) *chi.Mux {
 	router := chi.NewRouter()
 	// Global middleware
 	attachMiddleware(router)
-	router.Get("/", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(200) })
+	// Attach base routes
+	loadBaseRoutes(router, h)
 	// Attach auth routes
 	authRouter := chi.NewRouter()
 	loadAuthRoutes(authRouter, h)
@@ -42,8 +43,18 @@ func loadRoutes(h *handlers.Handler) *chi.Mux {
 	payoutRouter := chi.NewRouter()
 	loadPayoutRoutes(payoutRouter, h)
 	router.Mount("/payout", payoutRouter)
+	// Attach payment type routes
+	paymentTypeRouter := chi.NewRouter()
+	loadPaymentTypeRoutes(paymentTypeRouter, h)
+	router.Mount("/payment-types", paymentTypeRouter)
 	// Return the completed router
 	return router
+}
+
+func loadBaseRoutes(router chi.Router, h *handlers.Handler) {
+	router.Get("/", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(200) })
+	router.Post("/reset-password", h.SendResetPasswordEmailHandler)
+	router.Post("/new-password", h.SetNewPasswordHandler)
 }
 
 func loadAuthRoutes(router chi.Router, h *handlers.Handler) {
@@ -98,7 +109,7 @@ func loadPayoutRoutes(router chi.Router, h *handlers.Handler) {
 		router.Use(custom_middleware.AuthJwt)
 		router.Get("/make", h.MakePayoutHandler)
 		router.Post("/", h.SavePayoutHandler)
-		router.Get("/", h.GetPayoutHandler)
+		router.Get("/", h.GetPayoutsHandler)
 		router.Delete("/", h.DeletePayoutHandler)
 	})
 }
@@ -111,6 +122,17 @@ func loadEventTypeRoutes(router chi.Router, h *handlers.Handler) {
 		router.Get("/", h.GetEventTypeHandler)
 		router.Put("/", h.UpdateEventTypeHandler)
 		router.Delete("/", h.DeleteEventTypeHandler)
+	})
+}
+
+// Attaches all payment type related handlers to router
+func loadPaymentTypeRoutes(router chi.Router, h *handlers.Handler) {
+	router.Group(func(router chi.Router) {
+		router.Use(custom_middleware.AuthJwt)
+		router.Post("/", h.CreatePaymentTypeHandler)
+		router.Get("/", h.GetPaymentTypesHandler)
+		router.Put("/", h.UpdatePaymentTypeHandler)
+		router.Delete("/", h.DeletePaymentTypeHandler)
 	})
 }
 

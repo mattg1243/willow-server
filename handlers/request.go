@@ -60,7 +60,7 @@ func (r *createUserRequest) bind(req *http.Request, u *db.User, cI *db.UserConta
 	u.Email = r.User.Email
 	u.Rate = pgtype.Int4{Int32: r.User.Rate, Valid: false}
 	// hash password
-	h, err := u.HashPassword(r.User.Password)
+	h, err := db.HashPassword(r.User.Password)
 	if err != nil {
 		return err
 	}
@@ -229,13 +229,14 @@ func (r *updateClientRequest) bind(req *http.Request, cl *db.Client, v *Validato
 // event requests
 type createEventRequest struct {
 	Event struct {
-		ClientID    uuid.UUID `json:"client_id" validate:"required"`
-		Date        string    `json:"date" validate:"required"`
-		Duration    float64   `json:"duration"`
-		EventTypeID uuid.UUID `json:"event_type_id" validate:"required"`
-		Detail      string    `json:"detail"`
-		Rate        int32     `json:"rate"`
-		Amount      float64   `json:"amount"`
+		ClientID       uuid.UUID `json:"client_id" validate:"required"`
+		Date           string    `json:"date" validate:"required"`
+		Duration       float64   `json:"duration"`
+		EventTypeID    uuid.UUID `json:"event_type_id" validate:"required"`
+		EventNotes     string    `json:"event_notes"`
+		StatementNotes string    `json:"statement_notes"`
+		Rate           int32     `json:"rate"`
+		Amount         float64   `json:"amount"`
 	} `json:"event"`
 }
 
@@ -266,7 +267,8 @@ func (r *createEventRequest) bind(req *http.Request, e *db.Event, v *Validator) 
 	e.Date = pgtype.Timestamp{Time: timeStr, Valid: true}
 	e.Duration = Float64ToPgNumeric(r.Event.Duration)
 	e.EventTypeID = r.Event.EventTypeID
-	e.Detail = pgtype.Text{String: r.Event.Detail, Valid: true}
+	e.EventNotes = r.Event.EventNotes
+	e.StatementNotes = r.Event.StatementNotes
 	e.Rate = r.Event.Rate
 	e.Amount = int32(r.Event.Amount)
 	e.ClientID = r.Event.ClientID
@@ -276,15 +278,16 @@ func (r *createEventRequest) bind(req *http.Request, e *db.Event, v *Validator) 
 
 type updateEventRequest struct {
 	Event struct {
-		ID          uuid.UUID `json:"id" validate:"required"`
-		ClientID    uuid.UUID `json:"client_id" validate:"required"`
-		Date        string    `json:"date" validate:"required"`
-		Duration    float64   `json:"duration"`
-		EventTypeID uuid.UUID `json:"event_type_id" validate:"required"`
-		Detail      string    `json:"detail"`
-		Rate        int32     `json:"rate"`
-		Amount      float64   `json:"amount"`
-		Paid        bool      `json:"paid"`
+		ID             uuid.UUID `json:"id" validate:"required"`
+		ClientID       uuid.UUID `json:"client_id" validate:"required"`
+		Date           string    `json:"date" validate:"required"`
+		Duration       float64   `json:"duration"`
+		EventTypeID    uuid.UUID `json:"event_type_id" validate:"required"`
+		EventNotes     string    `json:"event_notes"`
+		StatementNotes string    `json:"statement_notes"`
+		Rate           int32     `json:"rate"`
+		Amount         float64   `json:"amount"`
+		Paid           bool      `json:"paid"`
 	} `json:"event"`
 }
 
@@ -309,7 +312,8 @@ func (r *updateEventRequest) bind(req *http.Request, e *db.Event, v *Validator) 
 	e.Date = pgtype.Timestamp{Time: timeStr, Valid: true}
 	e.Duration = Float64ToPgNumeric(r.Event.Duration)
 	e.EventTypeID = r.Event.EventTypeID
-	e.Detail = pgtype.Text{String: r.Event.Detail, Valid: true}
+	e.EventNotes = r.Event.EventNotes
+	e.StatementNotes = r.Event.StatementNotes
 	e.Rate = r.Event.Rate
 	e.Amount = int32(r.Event.Amount)
 	e.Paid = pgtype.Bool{Bool: r.Event.Paid, Valid: true}
@@ -360,6 +364,90 @@ func (r *updateEventTypeRequest) bind(req *http.Request, et *db.EventType, v *Va
 	et.ID = r.EventType.ID
 	et.Charge = r.EventType.Charge
 	et.Title = r.EventType.Title
+
+	return nil
+}
+
+type sendResetPasswordEmailRequest struct {
+	Email string `json:"email" validate:"required"`
+}
+
+func (r *sendResetPasswordEmailRequest) bind(req *http.Request, v *Validator) error {
+	if err := baseBind(req, r); err != nil {
+		return err
+	}
+
+	if err := v.Validate(r); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type setNewPasswordRequest struct {
+	Token    string `json:"token" validate:"required"`
+	Password string `json:"password" validate:"required"`
+}
+
+func (r *setNewPasswordRequest) bind(req *http.Request, v *Validator) error {
+	if err := baseBind(req, r); err != nil {
+		return err
+	}
+
+	if err := v.Validate(r); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type createPaymentTypeRequest struct {
+	Name string `json:"name" validate:"required"`
+}
+
+func (r *createPaymentTypeRequest) bind(req *http.Request, v *Validator) error {
+	if err := baseBind(req, r); err != nil {
+		return err
+	}
+
+	if err := v.Validate(r); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type updatePaymentTypeRequest struct {
+	UserID string `json:"user_id" validate:"required"`
+	ID     string `json:"id" validate:"required"`
+	Name   string `json:"name" validate:"required"`
+}
+
+func (r *updatePaymentTypeRequest) bind(req *http.Request, v *Validator) error {
+	if err := baseBind(req, r); err != nil {
+		return err
+	}
+
+	if err := v.Validate(r); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type deletePaymentTypeRequest struct {
+	UserID string `json:"user_id" validate:"required"`
+	ID     string `json:"id" validate:"required"`
+}
+
+func (r *deletePaymentTypeRequest) bind(req *http.Request, v *Validator) error {
+	if err := baseBind(req, r); err != nil {
+		return err
+	}
+
+	if err := v.Validate(r); err != nil {
+		return err
+	}
 
 	return nil
 }

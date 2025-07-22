@@ -1,8 +1,20 @@
 -- name: CreateEvent :one
 INSERT INTO events (
-    client_id, user_id, date, duration, event_type_id, detail, rate, amount, running_balance, id, created_at, updated_at
+    client_id, 
+    user_id, 
+    date, 
+    duration, 
+    event_type_id, 
+    rate, 
+    amount, 
+    running_balance, 
+    event_notes, 
+    statement_notes, 
+    id, 
+    created_at, 
+    updated_at
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW()
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW()
 ) RETURNING *;
 
 -- name: GetEvent :one
@@ -14,12 +26,13 @@ SELECT
     e.duration as duration,
     et.id as event_type_id,
     et.title as event_type_title,
-    e.detail as detail,
     e.rate as rate,
     e.amount::INTEGER as amount,
     e.running_balance::INTEGER as running_balance,
     e.paid as paid,
-    et.charge as charge
+    et.charge as charge,
+    e.statement_notes as statement_notes,
+    e.event_notes as event_notes
 FROM events e
 INNER JOIN event_types et ON e.event_type_id = et.id
 WHERE e.id = $1;
@@ -33,12 +46,13 @@ SELECT
     e.duration as duration,
     et.id as event_type_id,
     et.title as event_type_title,
-    e.detail as detail,
     e.rate as rate,
     e.amount::INTEGER as amount,
     e.running_balance::INTEGER as running_balance,
     e.paid as paid,
-    et.charge as charge
+    et.charge as charge,
+    e.statement_notes as statement_notes,
+    e.event_notes as event_notes
 FROM events e
 INNER JOIN event_types et ON e.event_type_id = et.id
 WHERE e.client_id = $1 or e.user_id = $1
@@ -60,17 +74,26 @@ SELECT
     e.duration as duration,
     et.id as event_type_id,
     et.title as event_type_title,
-    e.detail as detail,
     e.rate as rate,
     e.amount::INTEGER as amount,
     e.running_balance::INTEGER as running_balance,
     e.paid as paid,
-    et.charge as charge
+    et.charge as charge,
+    e.statement_notes as statement_notes,
+    e.event_notes as event_notes
 FROM events e
 INNER JOIN event_types et ON e.event_type_id = et.id
 INNER JOIN payout_events pe ON pe.event_id = e.id
 WHERE pe.payout_id = $1
 ORDER BY e.date ASC;
+
+-- name: EventIsInPayout :one
+SELECT EXISTS (
+    SELECT 1
+    FROM payout_events pe
+    JOIN payouts p on pe.payout_id = p.id
+    WHERE pe.event_id = ANY($1::uuid[]) AND p.user_id = $2
+) AS is_in_user_payouts;
 
 -- name: UpdateEvent :one
 UPDATE events
@@ -78,11 +101,12 @@ SET
     date = $2,
     duration = $3,
     event_type_id = $4,
-    detail = $5,
-    rate = $6,
-    amount = $7,
-    running_balance = $8,
-    paid = $9,
+    rate = $5,
+    amount = $6,
+    running_balance = $7,
+    paid = $8,
+    event_notes = $9,
+    statement_notes = $10,
     updated_at = NOW()
 WHERE
     id = $1

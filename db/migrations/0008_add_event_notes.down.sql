@@ -1,0 +1,4 @@
+ALTER TABLE events 
+  DROP COLUMN IF EXISTS event_notes, 
+  DROP COLUMN IF EXISTS statement_notes, 
+  ADD COLUMN IF NOT EXISTS detail TEXT;

@@ -57,6 +57,13 @@ RETURNING
     created_at, 
     updated_at;
 
+-- name: UpdateUserPassword :exec
+UPDATE users
+SET
+    "hash" = $2
+WHERE
+    id = $1;
+
 -- name: DeleteUser :exec
 DELETE FROM users
 WHERE id = $1;

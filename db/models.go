@@ -33,13 +33,14 @@ type Event struct {
 	Date           pgtype.Timestamp `json:"date"`
 	Duration       pgtype.Numeric   `json:"duration"`
 	EventTypeID    uuid.UUID        `json:"event_type_id"`
-	Detail         pgtype.Text      `json:"detail"`
 	Rate           int32            `json:"rate"`
 	Amount         int32            `json:"amount"`
 	RunningBalance int32            `json:"running_balance"`
 	Paid           pgtype.Bool      `json:"paid"`
 	CreatedAt      pgtype.Timestamp `json:"created_at"`
 	UpdatedAt      pgtype.Timestamp `json:"updated_at"`
+	EventNotes     string           `json:"event_notes"`
+	StatementNotes string           `json:"statement_notes"`
 }
 
 type EventType struct {
@@ -50,6 +51,17 @@ type EventType struct {
 	Charge    bool             `json:"charge"`
 	CreatedAt pgtype.Timestamp `json:"created_at"`
 	UpdatedAt pgtype.Timestamp `json:"updated_at"`
+}
+
+type EventsPaymentType struct {
+	EventID       uuid.UUID `json:"event_id"`
+	PaymentTypeID int32     `json:"payment_type_id"`
+}
+
+type PaymentType struct {
+	ID     int32       `json:"id"`
+	UserID pgtype.UUID `json:"user_id"`
+	Name   string      `json:"name"`
 }
 
 type Payout struct {
@@ -65,6 +77,14 @@ type Payout struct {
 type PayoutEvent struct {
 	PayoutID uuid.UUID `json:"payout_id"`
 	EventID  uuid.UUID `json:"event_id"`
+}
+
+type ResetPassword struct {
+	ID          int32            `json:"id"`
+	UserID      uuid.UUID        `json:"user_id"`
+	ResetToken  string           `json:"reset_token"`
+	RequestedAt pgtype.Timestamp `json:"requested_at"`
+	ExpiresAt   pgtype.Timestamp `json:"expires_at"`
 }
 
 type User struct {

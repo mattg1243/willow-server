@@ -13,14 +13,34 @@ insert into payout_events (
 ) returning *;
 
 -- name: GetPayout :one
-select * 
+select 
+  payouts.id,
+  payouts.user_id,
+  payouts.date,
+  payouts.amount,
+  payouts.created_at,
+  payouts.updated_at,
+  clients.id as client_id,
+  clients.fname as client_fname,
+  clients.lname as client_lname
 from payouts
-where id = $1;
+left join clients on payouts.client_id = clients.id
+where payouts.id = $1;
 
 -- name: GetPayouts :many
-select * 
+select
+  payouts.id,
+  payouts.user_id,
+  payouts.date,
+  payouts.amount,
+  payouts.created_at,
+  payouts.updated_at,
+  clients.id as client_id,
+  clients.fname as client_fname,
+  clients.lname as client_lname
 from payouts
-where user_id = $1 or client_id = $1;
+left join clients on payouts.client_id = clients.id
+where payouts.user_id = $1 or clients.id = $1;
 
 -- name: DeletePayout :exec
 delete from payouts
