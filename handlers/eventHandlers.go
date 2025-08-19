@@ -29,6 +29,14 @@ func (h *Handler) CreateEventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if payment and if so what method was used
+	eventType, err := h.queries.GetEventType(r.Context(), event.EventTypeID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	fmt.Printf("eventType: %v", eventType)
+
 	newEvent, err := h.queries.CreateEvent(r.Context(), db.CreateEventParams{
 		ClientID:       event.ClientID,
 		UserID:         userID,
@@ -47,6 +55,25 @@ func (h *Handler) CreateEventHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("error saving event: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	if eventType.Charge && req.Event.PaymentTypeID != nil {
+		// make sure the user is using their own payment type
+		_, err := h.queries.GetPaymentType(r.Context(), db.GetPaymentTypeParams{
+			UserID: pgtype.UUID{Bytes: userID, Valid: true},
+			ID:     int32(*req.Event.PaymentTypeID),
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		}
+		// link payment type to event
+		err = h.queries.AddPaymentTypeToEvent(r.Context(), db.AddPaymentTypeToEventParams{
+			EventID:       newEvent.ID,
+			PaymentTypeID: int32(*req.Event.PaymentTypeID),
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	}
 
 	// update balances

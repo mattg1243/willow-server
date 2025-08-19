@@ -54,8 +54,9 @@ type EventType struct {
 }
 
 type EventsPaymentType struct {
-	EventID       uuid.UUID `json:"event_id"`
-	PaymentTypeID int32     `json:"payment_type_id"`
+	EventID       uuid.UUID   `json:"event_id"`
+	PaymentTypeID int32       `json:"payment_type_id"`
+	Author        pgtype.UUID `json:"author"`
 }
 
 type PaymentType struct {

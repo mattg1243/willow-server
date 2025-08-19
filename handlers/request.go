@@ -214,6 +214,7 @@ func (r *updateClientRequest) bind(req *http.Request, cl *db.Client, v *Validato
 		return err
 	}
 
+	cl.ID = r.Client.ID
 	cl.Fname = r.Client.Fname
 	cl.Lname = pgtype.Text{String: r.Client.Lname, Valid: true}
 	cl.Email = pgtype.Text{String: r.Client.Email, Valid: true}
@@ -233,6 +234,7 @@ type createEventRequest struct {
 		Date           string    `json:"date" validate:"required"`
 		Duration       float64   `json:"duration"`
 		EventTypeID    uuid.UUID `json:"event_type_id" validate:"required"`
+		PaymentTypeID  *int      `json:"payment_type_id"`
 		EventNotes     string    `json:"event_notes"`
 		StatementNotes string    `json:"statement_notes"`
 		Rate           int32     `json:"rate"`

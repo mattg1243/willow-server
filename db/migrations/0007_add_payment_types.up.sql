@@ -13,7 +13,7 @@ VALUES
 -- create join table
 CREATE TABLE IF NOT EXISTS events_payment_types (
   event_id UUID NOT NULL,
-  payment_type_id SERIAL NOT NULL,
+  payment_type_id INTEGER NOT NULL,
   FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
   FOREIGN KEY (payment_type_id) REFERENCES payment_types(id) ON DELETE CASCADE
 );

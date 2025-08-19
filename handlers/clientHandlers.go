@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -94,6 +95,8 @@ func (h *Handler) UpdateClientHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
+
+	fmt.Print()
 
 	err := h.queries.UpdateClient(r.Context(), db.UpdateClientParams{
 		ID:                     client.ID,
