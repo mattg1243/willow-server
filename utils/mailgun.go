@@ -43,7 +43,7 @@ func SendEmail(params SendEmailParams) (string, error) {
 func CreateResetPasswordEmail(token string) string {
 	baseURL := os.Getenv("CLIENT_HOST")
 
-	resetLink := fmt.Sprintf("%s/reset-password?token=%s", baseURL, token)
+	resetLink := fmt.Sprintf("%s/auth/reset-password?token=%s", baseURL, token)
 
 	html := fmt.Sprintf(`
 		<!DOCTYPE html>
