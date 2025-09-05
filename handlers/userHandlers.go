@@ -227,7 +227,7 @@ func (h *Handler) LoginUserHandler(w http.ResponseWriter, r *http.Request) {
 		cookie := &http.Cookie{
 			Name:     "willow-access-token",
 			Value:    jwt,
-			Expires:  time.Now().Add((time.Hour * 72)),
+			Expires:  time.Now().Add((time.Minute * 30)),
 			HttpOnly: os.Getenv("PROD") == "true",
 			Secure:   os.Getenv("PROD") == "true",
 			Path:     "/",
