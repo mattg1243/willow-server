@@ -26,14 +26,14 @@ func (h *Handler) CreateClientHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	newClient, err := h.queries.CreateClient(r.Context(), db.CreateClientParams{
-		UserID: userID,
-		Fname:  client.Fname,
-		Lname:  client.Lname,
-		Email:  client.Email,
-		Phone: client.Phone,
-		Rate: client.Rate,
+		UserID:                 userID,
+		Fname:                  client.Fname,
+		Lname:                  client.Lname,
+		Email:                  client.Email,
+		Phone:                  client.Phone,
+		Rate:                   client.Rate,
 		Balancenotifythreshold: client.Balancenotifythreshold,
-		ID:     uuid.New(),
+		ID:                     uuid.New(),
 	})
 
 	if err != nil {
@@ -48,7 +48,7 @@ func (h *Handler) CreateClientHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) GetClientHandler(w http.ResponseWriter, r *http.Request)  {
+func (h *Handler) GetClientHandler(w http.ResponseWriter, r *http.Request) {
 	userIDStr := custom_middleware.GetUserFromContext(r)
 	userID, err := uuid.Parse(userIDStr)
 	if err != nil {
@@ -79,6 +79,10 @@ func (h *Handler) GetClientHandler(w http.ResponseWriter, r *http.Request)  {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		if client.UserID != userID {
+			http.Error(w, "Client not found.", http.StatusNotFound)
+			return
+		}
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(client); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -103,7 +107,7 @@ func (h *Handler) UpdateClientHandler(w http.ResponseWriter, r *http.Request) {
 		Fname:                  client.Fname,
 		Lname:                  client.Lname,
 		Email:                  client.Email,
-		Phone: 									client.Phone,
+		Phone:                  client.Phone,
 		Balancenotifythreshold: client.Balancenotifythreshold,
 		Rate:                   client.Rate,
 		Isarchived:             client.Isarchived,
@@ -149,7 +153,7 @@ func (h *Handler) DeleteClientHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
- 
+
 	w.Write([]byte("Client(s) deleted successfully"))
 }
 
