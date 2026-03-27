@@ -251,6 +251,22 @@ func (h *Handler) UpdateEventHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// update payment type association
+	if err := h.queries.RemovePaymentTypeFromEvent(r.Context(), event.ID); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if req.Event.PaymentTypeID != nil {
+		err = h.queries.AddPaymentTypeToEvent(r.Context(), db.AddPaymentTypeToEventParams{
+			EventID:       event.ID,
+			PaymentTypeID: int32(*req.Event.PaymentTypeID),
+		})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
 	// update balances
 	allEvents, err := h.queries.GetEvents(r.Context(), db.GetEventsParams{ClientID: event.ClientID})
 	if err != nil {

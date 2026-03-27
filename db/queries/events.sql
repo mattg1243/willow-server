@@ -18,7 +18,7 @@ INSERT INTO events (
 ) RETURNING *;
 
 -- name: GetEvent :one
-SELECT 
+SELECT
     e.id as id,
     e.client_id as client_id,
     e.user_id as user_id,
@@ -32,13 +32,15 @@ SELECT
     e.paid as paid,
     et.charge as charge,
     e.statement_notes as statement_notes,
-    e.event_notes as event_notes
+    e.event_notes as event_notes,
+    ept.payment_type_id as payment_type_id
 FROM events e
 INNER JOIN event_types et ON e.event_type_id = et.id
+LEFT JOIN events_payment_types ept ON ept.event_id = e.id
 WHERE e.id = $1;
 
 -- name: GetEvents :many
-SELECT 
+SELECT
     e.id as id,
     e.user_id as user_id,
     e.client_id as client_id,
@@ -52,9 +54,11 @@ SELECT
     e.paid as paid,
     et.charge as charge,
     e.statement_notes as statement_notes,
-    e.event_notes as event_notes
+    e.event_notes as event_notes,
+    ept.payment_type_id as payment_type_id
 FROM events e
 INNER JOIN event_types et ON e.event_type_id = et.id
+LEFT JOIN events_payment_types ept ON ept.event_id = e.id
 WHERE e.client_id = $1 or e.user_id = $1
     AND ($2::timestamptz IS NULL OR e.date >= $2::timestamptz)
     AND ($3::timestamptz IS NULL OR e.date <= $3::timestamptz)
@@ -66,7 +70,7 @@ SET event_type_id = $2
 WHERE event_type_id = $1;
 
 -- name: GetPayoutEvents :many
-SELECT 
+SELECT
     e.id as id,
     e.user_id as user_id,
     e.client_id as client_id,
@@ -80,10 +84,12 @@ SELECT
     e.paid as paid,
     et.charge as charge,
     e.statement_notes as statement_notes,
-    e.event_notes as event_notes
+    e.event_notes as event_notes,
+    ept.payment_type_id as payment_type_id
 FROM events e
 INNER JOIN event_types et ON e.event_type_id = et.id
 INNER JOIN payout_events pe ON pe.event_id = e.id
+LEFT JOIN events_payment_types ept ON ept.event_id = e.id
 WHERE pe.payout_id = $1
 ORDER BY e.date ASC;
 

@@ -285,6 +285,7 @@ type updateEventRequest struct {
 		Date           string    `json:"date" validate:"required"`
 		Duration       float64   `json:"duration"`
 		EventTypeID    uuid.UUID `json:"event_type_id" validate:"required"`
+		PaymentTypeID  *int      `json:"payment_type_id"`
 		EventNotes     string    `json:"event_notes"`
 		StatementNotes string    `json:"statement_notes"`
 		Rate           int32     `json:"rate"`

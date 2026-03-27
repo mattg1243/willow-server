@@ -112,7 +112,7 @@ func (q *Queries) EventIsInPayout(ctx context.Context, arg EventIsInPayoutParams
 }
 
 const getEvent = `-- name: GetEvent :one
-SELECT 
+SELECT
     e.id as id,
     e.client_id as client_id,
     e.user_id as user_id,
@@ -126,9 +126,11 @@ SELECT
     e.paid as paid,
     et.charge as charge,
     e.statement_notes as statement_notes,
-    e.event_notes as event_notes
+    e.event_notes as event_notes,
+    ept.payment_type_id as payment_type_id
 FROM events e
 INNER JOIN event_types et ON e.event_type_id = et.id
+LEFT JOIN events_payment_types ept ON ept.event_id = e.id
 WHERE e.id = $1
 `
 
@@ -147,6 +149,7 @@ type GetEventRow struct {
 	Charge         bool               `json:"charge"`
 	StatementNotes string             `json:"statement_notes"`
 	EventNotes     string             `json:"event_notes"`
+	PaymentTypeID  pgtype.Int4        `json:"payment_type_id"`
 }
 
 func (q *Queries) GetEvent(ctx context.Context, id uuid.UUID) (GetEventRow, error) {
@@ -167,12 +170,13 @@ func (q *Queries) GetEvent(ctx context.Context, id uuid.UUID) (GetEventRow, erro
 		&i.Charge,
 		&i.StatementNotes,
 		&i.EventNotes,
+		&i.PaymentTypeID,
 	)
 	return i, err
 }
 
 const getEvents = `-- name: GetEvents :many
-SELECT 
+SELECT
     e.id as id,
     e.user_id as user_id,
     e.client_id as client_id,
@@ -186,9 +190,11 @@ SELECT
     e.paid as paid,
     et.charge as charge,
     e.statement_notes as statement_notes,
-    e.event_notes as event_notes
+    e.event_notes as event_notes,
+    ept.payment_type_id as payment_type_id
 FROM events e
 INNER JOIN event_types et ON e.event_type_id = et.id
+LEFT JOIN events_payment_types ept ON ept.event_id = e.id
 WHERE e.client_id = $1 or e.user_id = $1
     AND ($2::timestamptz IS NULL OR e.date >= $2::timestamptz)
     AND ($3::timestamptz IS NULL OR e.date <= $3::timestamptz)
@@ -216,6 +222,7 @@ type GetEventsRow struct {
 	Charge         bool               `json:"charge"`
 	StatementNotes string             `json:"statement_notes"`
 	EventNotes     string             `json:"event_notes"`
+	PaymentTypeID  pgtype.Int4        `json:"payment_type_id"`
 }
 
 func (q *Queries) GetEvents(ctx context.Context, arg GetEventsParams) ([]GetEventsRow, error) {
@@ -242,6 +249,7 @@ func (q *Queries) GetEvents(ctx context.Context, arg GetEventsParams) ([]GetEven
 			&i.Charge,
 			&i.StatementNotes,
 			&i.EventNotes,
+			&i.PaymentTypeID,
 		); err != nil {
 			return nil, err
 		}
@@ -254,7 +262,7 @@ func (q *Queries) GetEvents(ctx context.Context, arg GetEventsParams) ([]GetEven
 }
 
 const getPayoutEvents = `-- name: GetPayoutEvents :many
-SELECT 
+SELECT
     e.id as id,
     e.user_id as user_id,
     e.client_id as client_id,
@@ -268,10 +276,12 @@ SELECT
     e.paid as paid,
     et.charge as charge,
     e.statement_notes as statement_notes,
-    e.event_notes as event_notes
+    e.event_notes as event_notes,
+    ept.payment_type_id as payment_type_id
 FROM events e
 INNER JOIN event_types et ON e.event_type_id = et.id
 INNER JOIN payout_events pe ON pe.event_id = e.id
+LEFT JOIN events_payment_types ept ON ept.event_id = e.id
 WHERE pe.payout_id = $1
 ORDER BY e.date ASC
 `
@@ -291,6 +301,7 @@ type GetPayoutEventsRow struct {
 	Charge         bool               `json:"charge"`
 	StatementNotes string             `json:"statement_notes"`
 	EventNotes     string             `json:"event_notes"`
+	PaymentTypeID  pgtype.Int4        `json:"payment_type_id"`
 }
 
 func (q *Queries) GetPayoutEvents(ctx context.Context, payoutID uuid.UUID) ([]GetPayoutEventsRow, error) {
@@ -317,6 +328,7 @@ func (q *Queries) GetPayoutEvents(ctx context.Context, payoutID uuid.UUID) ([]Ge
 			&i.Charge,
 			&i.StatementNotes,
 			&i.EventNotes,
+			&i.PaymentTypeID,
 		); err != nil {
 			return nil, err
 		}
